@@ -1,4 +1,4 @@
-import React, { useEffect, useState ,useCallback} from "react";
+import React, { useEffect, useState ,useCallback, useRef} from "react";
 import {
   View,
   Text,
@@ -9,8 +9,12 @@ import {
   Alert,
   ActivityIndicator,
   Dimensions,
+  FlatList,
+  PanGestureHandler,
+  State,
 } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -30,6 +34,8 @@ const ProductDetails = ({ navigation, route}) => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const flatListRef = useRef(null);
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -154,154 +160,206 @@ const handleDeleteReview = async (reviewId) => {
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color={theme.colors.primary} />;
 
+  const renderImageItem = ({ item, index }) => (
+    <View style={styles.imageSlide}>
+      <Image
+        source={{ uri: item.image }}
+        style={styles.sliderImage}
+        resizeMode="cover"
+      />
+    </View>
+  );
+
+  const handleImageScroll = (event) => {
+    const contentOffset = event.nativeEvent.contentOffset.x;
+    const imageIndex = Math.round(contentOffset / Dimensions.get('window').width);
+    setCurrentImageIndex(imageIndex);
+  };
+
+  const renderImageIndicator = () => {
+    if (!product?.images || product.images.length <= 1) return null;
+    
+    return (
+      <View style={styles.indicatorContainer}>
+        {product.images.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.indicator,
+              index === currentImageIndex && styles.activeIndicator
+            ]}
+          />
+        ))}
+      </View>
+    );
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
-      <LinearGradient colors={[theme.colors.background, '#e8eaf6']} style={styles.gradientBg}>
-        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-          <View style={styles.headerContainer}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={theme.header.backButton}
-            >
-              <AntDesign name="arrowleft" size={22} color={theme.colors.primary} />
-            </TouchableOpacity>
-            <Text style={styles.title}>Product Details</Text>
-            <View style={{ width: 40 }} />
-          </View>
-          
-          <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: product?.images?.[0].image }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-          </View>
-          
-          <View style={styles.contentContainer}>
-            <Text style={styles.name}>{product?.title}</Text>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
+        <LinearGradient colors={[theme.colors.background, '#e8eaf6']} style={styles.gradientBg}>
+          <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={theme.header.backButton}
+              >
+                <AntDesign name="arrowleft" size={22} color={theme.colors.primary} />
+              </TouchableOpacity>
+              <Text style={styles.title}>Product Details</Text>
+              <View style={{ width: 40 }} />
+            </View>
             
-            <View style={styles.priceCard}>
-              {product?.discount ? (
-                <View style={styles.priceRow}>
+            <View style={styles.imageSliderContainer}>
+              {product?.images && product.images.length > 0 ? (
+                <>
+                  <FlatList
+                    ref={flatListRef}
+                    data={product.images}
+                    renderItem={renderImageItem}
+                    keyExtractor={(item, index) => index.toString()}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    onMomentumScrollEnd={handleImageScroll}
+                    style={styles.imageSlider}
+                  />
+                  {renderImageIndicator()}
+                </>
+              ) : (
+                <View style={styles.noImageContainer}>
+                  <MaterialIcons name="image" size={64} color={theme.colors.textSecondary} />
+                  <Text style={styles.noImageText}>No images available</Text>
+                </View>
+              )}
+            </View>
+            
+            <View style={styles.contentContainer}>
+              <Text style={styles.name}>{product?.title}</Text>
+              
+              <View style={styles.priceCard}>
+                {product?.discount ? (
+                  <View style={styles.priceRow}>
+                    <View style={styles.priceInfo}>
+                      <MaterialIcons name="attach-money" size={24} color={theme.colors.primary} />
+                      <Text style={styles.price}>${product?.price}</Text>
+                    </View>
+                    <View style={styles.discountInfo}>
+                      <MaterialIcons name="local-offer" size={20} color={theme.colors.error} />
+                      <Text style={styles.discountText}>Discount: {product?.discount}%</Text>
+                    </View>
+                  </View>
+                ) : (
                   <View style={styles.priceInfo}>
                     <MaterialIcons name="attach-money" size={24} color={theme.colors.primary} />
                     <Text style={styles.price}>${product?.price}</Text>
                   </View>
-                  <View style={styles.discountInfo}>
-                    <MaterialIcons name="local-offer" size={20} color={theme.colors.error} />
-                    <Text style={styles.discountText}>Discount: {product?.discount}%</Text>
-                  </View>
-                </View>
-              ) : (
-                <View style={styles.priceInfo}>
-                  <MaterialIcons name="attach-money" size={24} color={theme.colors.primary} />
-                  <Text style={styles.price}>${product?.price}</Text>
-                </View>
-              )}
-            </View>
-            
-            <View style={styles.descriptionCard}>
-              <Text style={styles.descriptionTitle}>Description</Text>
-              <Text style={styles.description}>{product?.description}</Text>
-            </View>
-            
-            <View style={styles.infoRow}>
-              <View style={styles.infoCard}>
-                <MaterialIcons name="category" size={20} color={theme.colors.primary} />
-                <Text style={styles.infoLabel}>Category</Text>
-                <Text style={styles.infoValue}>{product?.category?.name || "N/A"}</Text>
+                )}
               </View>
-              <View style={styles.infoCard}>
-                <MaterialIcons name="check-circle" size={20} color={theme.colors.success} />
-                <Text style={styles.infoLabel}>Status</Text>
-                <Text style={styles.infoValue}>{product?.status}</Text>
+              
+              <View style={styles.descriptionCard}>
+                <Text style={styles.descriptionTitle}>Description</Text>
+                <Text style={styles.description}>{product?.description}</Text>
               </View>
-            </View>
-            
-            <View style={styles.actionsRow}>
-              <TouchableOpacity
-                style={styles.editButton}
-                activeOpacity={0.7}
-                onPress={() => handleEdit()}
-              >
-                <MaterialIcons name="edit" size={20} color={theme.colors.card} />
-                <Text style={styles.editButtonText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                activeOpacity={0.7}
-                onPress={() => handleDelete()}
-              >
-                <MaterialIcons name="delete" size={20} color={'#FFF'} />
-                <Text style={styles.deleteButtonText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.reviewsSection}>
-              <Text style={styles.reviewsTitle}>Reviews</Text>
-              {reviews?.length > 0 ? (
-                <View style={styles.reviews}>
-                  {reviews.map((review) => (
-                    <View key={review.id} style={styles.reviewCard}>
-                      <View style={styles.reviewHeader}>
-                        <View style={styles.reviewUser}>
-                          <Image
-                            source={{
-                              uri: review?.customer?.profile_imge || "https://i.pravatar.cc/150?img=12",
+              
+              <View style={styles.infoRow}>
+                <View style={styles.infoCard}>
+                  <MaterialIcons name="category" size={20} color={theme.colors.primary} />
+                  <Text style={styles.infoLabel}>Category</Text>
+                  <Text style={styles.infoValue}>{product?.category?.name || "N/A"}</Text>
+                </View>
+                <View style={styles.infoCard}>
+                  <MaterialIcons name="check-circle" size={20} color={theme.colors.success} />
+                  <Text style={styles.infoLabel}>Status</Text>
+                  <Text style={styles.infoValue}>{product?.status}</Text>
+                </View>
+              </View>
+              
+              <View style={styles.actionsRow}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  activeOpacity={0.7}
+                  onPress={() => handleEdit()}
+                >
+                  <MaterialIcons name="edit" size={20} color={theme.colors.card} />
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  activeOpacity={0.7}
+                  onPress={() => handleDelete()}
+                >
+                  <MaterialIcons name="delete" size={20} color={'#FFF'} />
+                  <Text style={styles.deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.reviewsSection}>
+                <Text style={styles.reviewsTitle}>Reviews</Text>
+                {reviews?.length > 0 ? (
+                  <View style={styles.reviews}>
+                    {reviews.map((review) => (
+                      <View key={review.id} style={styles.reviewCard}>
+                        <View style={styles.reviewHeader}>
+                          <View style={styles.reviewUser}>
+                            <Image
+                              source={{
+                                uri: review?.customer?.profile_imge || "https://i.pravatar.cc/150?img=12",
+                              }}
+                              style={styles.reviewImage}
+                            />
+                            <Text style={styles.reviewName}>
+                              {review?.customer?.f_name + " " + review?.customer?.l_name}
+                            </Text>
+                          </View>
+                          <TouchableOpacity
+                            style={styles.deleteReviewButton}
+                            onPress={() => {
+                              Alert.alert(
+                                "Delete Review",
+                                "Are you sure you want to delete this review?",
+                                [
+                                  { text: "Cancel", style: "cancel" },
+                                  {
+                                    text: "Delete",
+                                    onPress: () => handleDeleteReview(review.id),
+                                    style: "destructive",
+                                  },
+                                ]
+                              );
                             }}
-                            style={styles.reviewImage}
-                          />
-                          <Text style={styles.reviewName}>
-                            {review?.customer?.f_name + " " + review?.customer?.l_name}
-                          </Text>
+                          >
+                            <AntDesign name="delete" size={16} color={theme.colors.error} />
+                          </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                          style={styles.deleteReviewButton}
-                          onPress={() => {
-                            Alert.alert(
-                              "Delete Review",
-                              "Are you sure you want to delete this review?",
-                              [
-                                { text: "Cancel", style: "cancel" },
-                                {
-                                  text: "Delete",
-                                  onPress: () => handleDeleteReview(review.id),
-                                  style: "destructive",
-                                },
-                              ]
-                            );
-                          }}
-                        >
-                          <AntDesign name="delete" size={16} color={theme.colors.error} />
-                        </TouchableOpacity>
+                        <View style={styles.rating}>
+                          {[...Array(5)].map((_, i) => (
+                            <AntDesign
+                              key={i}
+                              name="star"
+                              size={18}
+                              color={i < review?.rating ? theme.colors.warning : "#ccc"}
+                              style={styles.iconStar}
+                            />
+                          ))}
+                        </View>
+                        <Text style={styles.reviewText}>{review?.comment}</Text>
                       </View>
-                      <View style={styles.rating}>
-                        {[...Array(5)].map((_, i) => (
-                          <AntDesign
-                            key={i}
-                            name="star"
-                            size={18}
-                            color={i < review?.rating ? theme.colors.warning : "#ccc"}
-                            style={styles.iconStar}
-                          />
-                        ))}
-                      </View>
-                      <Text style={styles.reviewText}>{review?.comment}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.noReviewsCard}>
-                  <MaterialIcons name="rate-review" size={48} color={theme.colors.textSecondary} />
-                  <Text style={styles.noReviews}>No reviews yet</Text>
-                </View>
-              )}
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.noReviewsCard}>
+                    <MaterialIcons name="rate-review" size={48} color={theme.colors.textSecondary} />
+                    <Text style={styles.noReviews}>No reviews yet</Text>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </LinearGradient>
-    </SafeAreaView>
+          </ScrollView>
+        </LinearGradient>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 };
 
@@ -550,5 +608,55 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     flex: 1,
     textAlign: 'center',
+  },
+  imageSliderContainer: {
+    width: '100%',
+    height: 300,
+    marginBottom: 20,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
+    ...theme.shadow,
+  },
+  imageSlider: {
+    width: '100%',
+    height: '100%',
+  },
+  imageSlide: {
+    width: Dimensions.get('window').width,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sliderImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: theme.radius.lg,
+  },
+  indicatorContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  indicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ccc',
+    marginHorizontal: 4,
+  },
+  activeIndicator: {
+    backgroundColor: theme.colors.primary,
+  },
+  noImageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  noImageText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: theme.colors.textSecondary,
   },
 });
