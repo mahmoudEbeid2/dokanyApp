@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,22 +7,22 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+import { useNavigation, useIsFocused } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API } from "@env";
-import ProductCard from './ProductCard';
-import theme from '../utils/theme';
+import ProductCard from "./ProductCard";
+import theme from "../utils/theme";
 
 export default function ProductScreen() {
   const navigation = useNavigation();
-  const isFocused = useIsFocused(); 
+  const isFocused = useIsFocused();
 
   const [allProducts, setAllProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
@@ -30,52 +30,34 @@ export default function ProductScreen() {
 
   const fetchAllProducts = async (authToken) => {
     try {
-      let all = [];
-      let currentPage = 1;
-      let keepFetching = true;
+      const res = await axios.get(`${API}/products/seller/products`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
 
-      while (keepFetching) {
-        const res = await axios.get(
-          `${API}/products/seller?page=${currentPage}&limit=10`,
-          {
-            headers: { Authorization: `Bearer ${authToken}` },
-          }
-        );
+      const Products = res.data;
 
-        const newProducts = res.data;
-
-        if (newProducts.length > 0) {
-          all = [...all, ...newProducts];
-          currentPage++;
-        }
-
-        if (newProducts.length < 10) {
-          keepFetching = false;
-        }
-      }
-
-      setAllProducts(all);
-      setFilteredProducts(all);
+      setAllProducts(Products);
+      setFilteredProducts(Products);
     } catch (err) {
-      console.error('Error fetching products:', err.message);
+      console.error("Error fetching products:", err.message);
     }
     setLoading(false);
   };
 
   useEffect(() => {
     const loadTokenAndFetch = async () => {
-      const storedToken = await AsyncStorage.getItem('token');
+      const storedToken = await AsyncStorage.getItem("token");
       if (storedToken) {
         setToken(storedToken);
         fetchAllProducts(storedToken);
       } else {
         setLoading(false);
-        console.error('Token not found in AsyncStorage');
+        console.error("Token not found in AsyncStorage");
       }
     };
 
     if (isFocused) {
-      setLoading(true); 
+      setLoading(true);
       loadTokenAndFetch();
     }
   }, [isFocused]);
@@ -90,7 +72,7 @@ export default function ProductScreen() {
   };
 
   const goToDetails = (productId) => {
-    navigation.navigate('ProductDetails', { productId });
+    navigation.navigate("ProductDetails", { productId });
   };
 
   const paginatedData = filteredProducts.slice(
@@ -104,7 +86,7 @@ export default function ProductScreen() {
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate('CreateProduct')}
+        onPress={() => navigation.navigate("CreateProduct")}
       >
         <Ionicons name="add" size={32} color="#fff" />
       </TouchableOpacity>
@@ -132,7 +114,7 @@ export default function ProductScreen() {
         <>
           <FlatList
             data={paginatedData}
-            keyExtractor={(item, index) => item.id + '_' + index}
+            keyExtractor={(item, index) => item.id + "_" + index}
             numColumns={2}
             contentContainerStyle={styles.list}
             renderItem={({ item }) => (
@@ -146,7 +128,11 @@ export default function ProductScreen() {
               disabled={page === 1}
               style={page === 1 ? styles.disabled : {}}
             >
-              <Ionicons name="chevron-back-circle" size={32} color={theme.colors.primary} />
+              <Ionicons
+                name="chevron-back-circle"
+                size={32}
+                color={theme.colors.primary}
+              />
             </TouchableOpacity>
 
             <Text style={styles.pageText}>
@@ -158,7 +144,11 @@ export default function ProductScreen() {
               disabled={page === totalPages}
               style={page === totalPages ? styles.disabled : {}}
             >
-              <Ionicons name="chevron-forward-circle" size={32} color={theme.colors.primary} />
+              <Ionicons
+                name="chevron-forward-circle"
+                size={32}
+                color={theme.colors.primary}
+              />
             </TouchableOpacity>
           </View>
         </>
@@ -168,15 +158,15 @@ export default function ProductScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 8, 
+  container: {
+    flex: 1,
+    padding: 8,
     paddingHorizontal: 15,
-    backgroundColor: theme.colors.background 
+    backgroundColor: theme.colors.background,
   },
   searchWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: theme.colors.card,
     borderRadius: theme.radius.lg,
     paddingVertical: 10,
@@ -188,7 +178,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: theme.colors.text,
     fontSize: theme.fonts.size.md,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     marginLeft: 8,
   },
   list: {
@@ -196,9 +186,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 14,
     gap: 10,
   },
@@ -207,7 +197,7 @@ const styles = StyleSheet.create({
   },
   pageText: {
     fontSize: theme.fonts.size.md,
-    fontWeight: '600',
+    fontWeight: "600",
     marginHorizontal: 18,
     color: theme.colors.text,
   },
@@ -216,19 +206,19 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: theme.colors.background,
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 20,
   },
   emptyText: {
     fontSize: theme.fonts.size.lg,
     color: theme.colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });
