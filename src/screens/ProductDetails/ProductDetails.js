@@ -12,6 +12,7 @@ import {
   FlatList,
   PanGestureHandler,
   State,
+  Modal,
 } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -35,7 +36,10 @@ const ProductDetails = ({ navigation, route}) => {
   const [loading, setLoading] = useState(true);
   const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const flatListRef = useRef(null);
+  const modalFlatListRef = useRef(null);
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -48,15 +52,22 @@ const ProductDetails = ({ navigation, route}) => {
   }, []);
 
   //   const { product } = route.params;
-  const productId = route.params.productId;
+  const productId = route.params?.productId;
+  
+  // Validate productId
+  if (!productId) {
+    Alert.alert("Error", "Product ID not found. Please try again.");
+    navigation.goBack();
+    return null;
+  }
 
  useFocusEffect (useCallback(() => {
     const fetchProduct = async () => {
         
       try {
-        const response = await fetch(
-          `${API}/products/${productId}`
-        );
+                 const response = await fetch(
+           `${API}/products/${productId}`
+         );
         const data = await response.json();
         console.log("Product:", data);
         setProduct(data);
@@ -97,46 +108,101 @@ const ProductDetails = ({ navigation, route}) => {
   };
 
   const handleDelete = async () => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      const res = await fetch(
-        `${API}/products/${productId}`,
+    Alert.alert(
+      "Delete Product",
+      "Are you sure you want to delete this product? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
         {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+              if (!token) {
+                Alert.alert("Error", "Authentication token not found. Please login again.");
+                return;
+              }
+
+                             // Use the correct API endpoint
+               const res = await fetch(`${API}/products/${productId}`, {
+                 method: "DELETE",
+                 headers: {
+                   Authorization: `Bearer ${token}`,
+                   'Content-Type': 'application/json',
+                 },
+               });
+
+                             console.log("Delete response status:", res.status);
+               console.log("Delete URL:", `${API}/products/${productId}`);
+               console.log("Token exists:", !!token);
+
+              if (res.ok) {
+                Alert.alert("Success", "Product deleted successfully!", [
+                  {
+                    text: "OK",
+                    onPress: () => navigation.goBack()
+                  }
+                ]);
+              } else {
+                let errorData;
+                try {
+                  errorData = await res.json();
+                } catch (parseError) {
+                  console.error("Error parsing response:", parseError);
+                  errorData = { message: "Failed to parse server response" };
+                }
+                
+                console.error("Delete error response:", errorData);
+                console.error("Response status:", res.status);
+                console.error("Response status text:", res.statusText);
+                
+                let errorMessage = "Unknown error";
+                if (errorData.error) {
+                  errorMessage = errorData.error;
+                } else if (errorData.message) {
+                  errorMessage = errorData.message;
+                } else if (res.status === 401) {
+                  errorMessage = "Unauthorized. Please login again.";
+                } else if (res.status === 403) {
+                  errorMessage = "You don't have permission to delete this product.";
+                } else if (res.status === 404) {
+                  errorMessage = "Product not found.";
+                } else if (res.status === 500) {
+                  errorMessage = "Server error. Please try again later.";
+                }
+
+                Alert.alert(
+                  "Error",
+                  `Failed to delete product (Status: ${res.status}): ${errorMessage}`
+                );
+              }
+            } catch (error) {
+              console.error("Error deleting product:", error);
+              Alert.alert("Error", "Network error. Please check your connection and try again.");
+            }
           },
-        }
-      );
-
-      if (res.ok) {
-        Alert.alert("Success", "Product deleted successfully!");
-        // You can navigate back or refresh list
-        navigation.goBack();
-
-      } else {
-        const errorData = await res.json();
-        Alert.alert(
-          "Error",
-          `Failed to delete product: ${errorData.message || "Unknown error"}`
-        );
-      }
-    } catch (error) {
-      console.error("Error deleting product:", error);
-      Alert.alert("Error", "Error deleting product.");
-    }
+        },
+      ]
+    );
   };
 
 //   handleDeleteReview
 const handleDeleteReview = async (reviewId) => {
-  const token = await AsyncStorage.getItem('token');
   try {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      Alert.alert("Error", "Authentication token not found. Please login again.");
+      return;
+    }
+
     const res = await fetch(
       `${API}/reviews/${reviewId}`,
       {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       }
     );
@@ -146,28 +212,53 @@ const handleDeleteReview = async (reviewId) => {
       setReviews(reviews.filter((review) => review.id !== reviewId));
     } else {
       const errorData = await res.json();
+      console.error("Delete review error response:", errorData);
       Alert.alert(
         "Error",
         `Failed to delete review: ${errorData.message || "Unauthorized or Unknown error"}`
       );
-      console.log(res)
     }
   } catch (error) {
     console.error("Error deleting review:", error);
-    Alert.alert("Error", "Error deleting review.");
+    Alert.alert("Error", "Network error. Please check your connection and try again.");
   }
 }
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color={theme.colors.primary} />;
 
+  const handleImagePress = (index) => {
+    setSelectedImageIndex(index);
+    setModalVisible(true);
+  };
+
+  const handleModalImageScroll = (event) => {
+    const contentOffset = event.nativeEvent.contentOffset.x;
+    const imageIndex = Math.round(contentOffset / Dimensions.get('window').width);
+    setSelectedImageIndex(imageIndex);
+  };
+
+  const renderModalImageItem = ({ item, index }) => (
+    <View style={styles.modalImageSlide}>
+      <Image
+        source={{ uri: item.image }}
+        style={styles.modalImage}
+        resizeMode="contain"
+      />
+    </View>
+  );
+
   const renderImageItem = ({ item, index }) => (
-    <View style={styles.imageSlide}>
+    <TouchableOpacity 
+      style={styles.imageSlide}
+      onPress={() => handleImagePress(index)}
+      activeOpacity={0.9}
+    >
       <Image
         source={{ uri: item.image }}
         style={styles.sliderImage}
         resizeMode="cover"
       />
-    </View>
+    </TouchableOpacity>
   );
 
   const handleImageScroll = (event) => {
@@ -197,7 +288,7 @@ const handleDeleteReview = async (reviewId) => {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
+                 <StatusBar barStyle="dark-content" />
         <LinearGradient colors={[theme.colors.background, '#e8eaf6']} style={styles.gradientBg}>
           <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
             <View style={styles.headerContainer}>
@@ -290,7 +381,7 @@ const handleDeleteReview = async (reviewId) => {
                   activeOpacity={0.7}
                   onPress={() => handleDelete()}
                 >
-                  <MaterialIcons name="delete" size={20} color={'#FFF'} />
+                  <MaterialIcons name="delete-forever" size={20} color={'#FFF'} />
                   <Text style={styles.deleteButtonText}>Delete</Text>
                 </TouchableOpacity>
               </View>
@@ -358,6 +449,51 @@ const handleDeleteReview = async (reviewId) => {
             </View>
           </ScrollView>
         </LinearGradient>
+
+        {/* Image Modal */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <AntDesign name="close" size={24} color={theme.colors.card} />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>
+                {selectedImageIndex + 1} / {product?.images?.length || 0}
+              </Text>
+              <View style={{ width: 40 }} />
+            </View>
+            
+            <View style={styles.modalContent}>
+              {product?.images && (
+                <FlatList
+                  ref={modalFlatListRef}
+                  data={product.images}
+                  renderItem={renderModalImageItem}
+                  keyExtractor={(item, index) => index.toString()}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onMomentumScrollEnd={handleModalImageScroll}
+                  initialScrollIndex={selectedImageIndex}
+                  getItemLayout={(data, index) => ({
+                    length: Dimensions.get('window').width,
+                    offset: Dimensions.get('window').width * index,
+                    index,
+                  })}
+                  style={styles.modalImageSlider}
+                />
+              )}
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -541,7 +677,7 @@ const styles = StyleSheet.create({
   imageContainer: { alignItems: 'center', marginTop: 20, marginBottom: 20 },
   image: { width: '90%', height: 300, borderRadius: theme.radius.lg, ...theme.shadow },
   contentContainer: { paddingHorizontal: 20, paddingBottom: 32 },
-  name: { fontSize: theme.fonts.size.xxl, fontWeight: 'bold', color: theme.colors.text, fontFamily: theme.fonts.bold, marginBottom: 16, textAlign: 'center' },
+  name: { fontSize: theme.fonts.size.lg, fontWeight: 'bold', color: theme.colors.text, fontFamily: theme.fonts.bold, marginBottom: 16, textAlign: 'center' },
   priceCard: { backgroundColor: theme.colors.card, borderRadius: theme.radius.lg, padding: 16, marginBottom: 16, ...theme.shadow },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   priceInfo: { flexDirection: 'row', alignItems: 'center' },
@@ -603,11 +739,7 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   title: {
-    fontSize: theme.fonts.size.lg,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-    flex: 1,
-    textAlign: 'center',
+    ...theme.header.title,
   },
   imageSliderContainer: {
     width: '100%',
@@ -658,5 +790,63 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: theme.colors.textSecondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 20,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 10,
+  },
+  modalCloseButton: {
+    padding: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    color: theme.colors.card,
+    fontSize: theme.fonts.size.lg,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  modalContent: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImageSlider: {
+    width: '100%',
+    height: '100%',
+  },
+  modalImageSlide: {
+    width: Dimensions.get('window').width,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: theme.radius.lg,
   },
 });
