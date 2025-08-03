@@ -3,11 +3,20 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import theme from '../utils/theme';
 
 const ProductCard = memo(({ product, onPress }) => {
-  const imageUri = product?.images?.[0]?.image;
+  const imageUri = product?.images?.[0]?.image || 'https://via.placeholder.com/150';
 
   const handlePress = useCallback(() => {
-    onPress(product.id);
-  }, [onPress, product.id]);
+    if (product?.id && onPress) {
+      onPress(product.id);
+    }
+  }, [onPress, product?.id]);
+
+  // Ensure all text values are strings
+  const productTitle = product?.title || 'No Title';
+  const productPrice = product?.price ? `$${product.price}` : '$0';
+  const productOriginalPrice = product?.originalPrice ? `$${product.originalPrice}` : productPrice;
+  const productStatus = product?.status || 'N/A';
+  const productDiscount = product?.discount ? `${product.discount}` : null;
 
   return (
     <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.9}>
@@ -18,29 +27,29 @@ const ProductCard = memo(({ product, onPress }) => {
            resizeMethod="resize"
            fadeDuration={0}
          />
-         {product?.discount && (
+         {productDiscount && (
            <View style={styles.discountBadge}>
-             <Text style={styles.discountText}>-{product.discount}%</Text>
+             <Text style={styles.discountText}>-{productDiscount}%</Text>
            </View>
          )}
        </View>
       
       <View style={styles.contentContainer}>
-        <Text style={styles.title} numberOfLines={2}>{product.title}</Text>
+        <Text style={styles.title} numberOfLines={2}>{productTitle}</Text>
         
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>${product?.price || '0'}</Text>
-          {product?.discount && (
-            <Text style={styles.originalPrice}>${product?.originalPrice || product?.price}</Text>
+          <Text style={styles.price}>{productPrice}</Text>
+          {productDiscount && (
+            <Text style={styles.originalPrice}>{productOriginalPrice}</Text>
           )}
         </View>
         
         <View style={styles.statusContainer}>
           <View style={[
             styles.statusIndicator, 
-            { backgroundColor: product?.status === 'active' ? theme.colors.success : theme.colors.error }
+            { backgroundColor: productStatus === 'active' ? theme.colors.success : theme.colors.error }
           ]} />
-          <Text style={styles.statusText}>{product?.status || 'N/A'}</Text>
+          <Text style={styles.statusText}>{productStatus}</Text>
         </View>
       </View>
     </TouchableOpacity>

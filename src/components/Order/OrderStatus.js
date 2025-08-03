@@ -41,10 +41,11 @@ function OrderStatus({ status, order_id }) {
       alert("Something went wrong ❌");
     }
   }
+
   const buttonStyle = {
     width: "100%",
     backgroundColor: theme.colors.primary,
-    marginTop: 40,
+    marginTop: 20,
     height: 50,
     justifyContent: "center",
     alignItems: "center",

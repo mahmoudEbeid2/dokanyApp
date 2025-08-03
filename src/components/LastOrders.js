@@ -30,6 +30,26 @@ export default function LastOrders() {
     }, [])
   );
 
+  const getCustomerName = (order) => {
+    if (order.customer) {
+      if (order.customer.f_name && order.customer.l_name) {
+        return `${order.customer.f_name} ${order.customer.l_name}`;
+      } else if (order.customer.name) {
+        return order.customer.name;
+      } else if (order.customer.first_name && order.customer.last_name) {
+        return `${order.customer.first_name} ${order.customer.last_name}`;
+      }
+    }
+    return "Customer Account";
+  };
+
+  const getCustomerImage = (order) => {
+    if (order.customer && order.customer.profile_image) {
+      return order.customer.profile_image;
+    }
+    return require('../../assets/avtar.jpg');
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Last Orders</Text>
@@ -39,14 +59,10 @@ export default function LastOrders() {
         renderItem={({ item }) => (
           <View style={{ marginBottom: 14 }}>
             <OrderCard
-              name={`${item.customer.f_name} ${item.customer.l_name}`}
+              name={getCustomerName(item)}
               orderNumber={item.id}
               price={item.total_price}
-              image={
-                item.customer.profile_image
-                  ? item.customer.profile_image
-                  : require('../../assets/avtar.jpg')
-              }
+              image={getCustomerImage(item)}
               status={item.status}
             />
           </View>

@@ -120,7 +120,7 @@ const CustomerDetailsScreen = ({ route, navigation }) => {
             <View style={styles.infoRow}>
               <AntDesign name="enviromento" size={24} color={theme.colors.primary} />
               <Text style={styles.infoLabel}>City</Text>
-              <Text style={styles.infoValue}>{customer.city || 'N/A'}</Text>
+              <Text style={styles.infoValue}>{String(customer.city ?? 'N/A')}</Text>
             </View>
           </View>
           <View style={styles.divider} />
@@ -128,7 +128,7 @@ const CustomerDetailsScreen = ({ route, navigation }) => {
             <View style={styles.infoRow}>
               <AntDesign name="flag" size={24} color={theme.colors.primary} />
               <Text style={styles.infoLabel}>Governorate</Text>
-              <Text style={styles.infoValue}>{customer.governorate || 'N/A'}</Text>
+              <Text style={styles.infoValue}>{String(customer.governorate ?? 'N/A')}</Text>
             </View>
           </View>
           <View style={styles.divider} />
@@ -136,7 +136,7 @@ const CustomerDetailsScreen = ({ route, navigation }) => {
             <View style={styles.infoRow}>
               <AntDesign name="earth" size={24} color={theme.colors.primary} />
               <Text style={styles.infoLabel}>Country</Text>
-              <Text style={styles.infoValue}>{customer.country || 'N/A'}</Text>
+              <Text style={styles.infoValue}>{String(customer.country ?? 'N/A')}</Text>
             </View>
           </View>
         </ScrollView>

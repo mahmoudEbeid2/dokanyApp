@@ -1,20 +1,12 @@
 import { View, Text } from "react-native";
 import SummaryItem from "./SummaryItem";
+import { summaryItemStyle } from "./OrderDetailsStyle";
 import theme from '../../utils/theme';
 
 function OrderSummary({ orders }) {
   return (
-    <View>
-      <Text
-        style={{
-          fontSize: theme.fonts.size.lg,
-          fontWeight: 'bold',
-          marginBottom: 8,
-          marginTop: 28,
-          color: theme.colors.text,
-          fontFamily: theme.fonts.bold,
-        }}
-      >
+    <View style={summaryItemStyle.container}>
+      <Text style={summaryItemStyle.title}>
         Order Summary
       </Text>
 

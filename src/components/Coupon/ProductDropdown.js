@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { View, ActivityIndicator, StyleSheet, Image } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import { API } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -13,35 +13,37 @@ const ProductDropdown = ({ id, value, onChange }) => {
   const fetchAllProducts = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-      let page = 1;
-      let allProducts = [];
-      let hasMore = true;
+      
+      // Use the new endpoint to get all products at once
+      const res = await fetch(`${API}/products/seller/products`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      while (hasMore) {
-        const res = await fetch(`${API}/products/seller?page=${page}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await res.json();
-        const pageProducts = Array.isArray(data) ? data : data.products;
-
-        if (!pageProducts || pageProducts.length === 0) {
-          hasMore = false;
-        } else {
-          allProducts = [...allProducts, ...pageProducts];
-          page += 1;
-        }
-      }
+      const data = await res.json();
+      const allProducts = Array.isArray(data) ? data : data.products || [];
 
       const dropdownItems = allProducts
         .filter((product) => product?.id && product?.title)
-        .map((product) => ({
-          label: product.title,
-          value: product.id,
-          key: product.id,
-        }));
+        .map((product) => {
+          const shortTitle = product.title.length > 25 
+            ? product.title.substring(0, 25) + '...' 
+            : product.title;
+          
+          return {
+            label: shortTitle,
+            value: product.id,
+            key: product.id,
+            icon: () => (
+              <Image 
+                source={{ uri: product.images?.[0]?.image || 'https://via.placeholder.com/40' }} 
+                style={styles.productImage}
+                resizeMode="cover"
+              />
+            ),
+          };
+        });
 
       setProducts(dropdownItems);
 
@@ -78,17 +80,14 @@ const ProductDropdown = ({ id, value, onChange }) => {
           searchable
           listMode="MODAL"
           searchPlaceholder="Search Here"
-          style={styles.dropdownModern}
-          dropDownContainerStyle={styles.dropdownContainerModern}
-          textStyle={styles.dropdownTextModern}
-          placeholderStyle={styles.placeholderModern}
-          ArrowDownIconComponent={({ style }) => (
-            <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-              <View style={{ width: 0, height: 0, borderLeftWidth: 8, borderRightWidth: 8, borderTopWidth: 12, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: theme.colors.primary, marginLeft: 6 }} />
-            </View>
-          )}
-          searchContainerStyle={styles.searchContainerModern}
-          searchTextInputStyle={styles.searchInputModern}
+          style={styles.dropdown}
+          dropDownContainerStyle={styles.dropdownContainer}
+          textStyle={styles.dropdownText}
+          placeholderStyle={styles.placeholder}
+          searchContainerStyle={styles.searchContainer}
+          searchTextInputStyle={styles.searchInput}
+          listItemContainerStyle={styles.listItemContainer}
+          listItemLabelStyle={styles.listItemLabel}
         />
       )}
     </View>
@@ -102,18 +101,63 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   dropdown: {
+    backgroundColor: theme.colors.card,
     borderColor: theme.colors.primary,
     borderRadius: theme.radius.lg,
+    minHeight: 52,
+    marginBottom: 16,
+    paddingHorizontal: 16,
   },
   dropdownContainer: {
     borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
   },
-  dropdownModern: { backgroundColor: theme.colors.card, borderColor: 'transparent', borderRadius: 22, minHeight: 52, elevation: 8, ...theme.strongShadow, marginBottom: 16, paddingHorizontal: 16 },
-  dropdownContainerModern: { borderColor: 'transparent', borderRadius: 22, backgroundColor: theme.colors.card, ...theme.strongShadow },
-  dropdownTextModern: { color: theme.colors.text, fontSize: theme.fonts.size.md, fontWeight: 'bold', letterSpacing: 0.2 },
-  placeholderModern: { color: theme.colors.textSecondary, fontSize: theme.fonts.size.md, fontWeight: '600' },
-  searchContainerModern: { borderBottomColor: theme.colors.primary, borderBottomWidth: 1, backgroundColor: theme.colors.card, borderRadius: theme.radius.md, marginBottom: 6 },
-  searchInputModern: { color: theme.colors.text, fontSize: theme.fonts.size.md, borderColor: theme.colors.primary, borderWidth: 1, borderRadius: theme.radius.md, padding: 8, backgroundColor: theme.colors.card },
+  dropdownText: {
+    color: theme.colors.text,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  placeholder: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  searchContainer: {
+    borderBottomColor: theme.colors.primary,
+    borderBottomWidth: 1,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.md,
+    marginBottom: 6,
+  },
+  searchInput: {
+    color: theme.colors.text,
+    fontSize: 14,
+    borderColor: theme.colors.primary,
+    borderWidth: 1,
+    borderRadius: theme.radius.md,
+    padding: 8,
+    backgroundColor: theme.colors.card,
+  },
+  listItemContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  listItemLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginLeft: 12,
+    flex: 1,
+  },
+  productImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f8f9fa',
+  },
 });
 
 export default ProductDropdown;

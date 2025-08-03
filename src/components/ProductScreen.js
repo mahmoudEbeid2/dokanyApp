@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -24,32 +24,59 @@ export default function ProductScreen() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
+  const [hasMoreData, setHasMoreData] = useState(true);
   const [pageSize] = useState(10);
   const [token, setToken] = useState(null);
 
-  const fetchAllProducts = async (authToken) => {
+  // Fetch products with pagination
+  const fetchProducts = async (authToken, pageNumber = 1, append = false) => {
     try {
-      const res = await axios.get(`${API}/products/seller/products`, {
+      setLoadingMore(true);
+      const res = await axios.get(`${API}/products/seller?page=${pageNumber}`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
 
-      const Products = res.data;
+      const newProducts = res.data.data || res.data || [];
+      
+      if (append) {
+        setAllProducts(prev => [...prev, ...newProducts]);
+        setFilteredProducts(prev => [...prev, ...newProducts]);
+      } else {
+        setAllProducts(newProducts);
+        setFilteredProducts(newProducts);
+      }
 
-      setAllProducts(Products);
-      setFilteredProducts(Products);
+      // Check if there's more data
+      setHasMoreData(newProducts.length === pageSize);
+      
     } catch (err) {
       console.error("Error fetching products:", err.message);
+      setHasMoreData(false);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-    setLoading(false);
   };
 
+  // Load more products when scrolling
+  const loadMoreProducts = useCallback(async () => {
+    if (!loadingMore && hasMoreData && token) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      await fetchProducts(token, nextPage, true);
+    }
+  }, [loadingMore, hasMoreData, token, page]);
+
+  // Initial load
   useEffect(() => {
     const loadTokenAndFetch = async () => {
       const storedToken = await AsyncStorage.getItem("token");
       if (storedToken) {
         setToken(storedToken);
-        fetchAllProducts(storedToken);
+        setPage(1);
+        await fetchProducts(storedToken, 1, false);
       } else {
         setLoading(false);
         console.error("Token not found in AsyncStorage");
@@ -62,25 +89,76 @@ export default function ProductScreen() {
     }
   }, [isFocused]);
 
+  // Search functionality
   const handleSearch = (text) => {
     setSearchText(text);
-    const filtered = allProducts.filter((p) =>
-      p.title.toLowerCase().includes(text.toLowerCase())
-    );
-    setFilteredProducts(filtered);
-    setPage(1);
+    if (text.trim() === "") {
+      setFilteredProducts(allProducts);
+    } else {
+      const filtered = allProducts.filter((p) =>
+        p.title.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredProducts(filtered);
+    }
   };
 
   const goToDetails = (productId) => {
     navigation.navigate("ProductDetails", { productId });
   };
 
-  const paginatedData = filteredProducts.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
+  // Safe key extractor
+  const keyExtractor = useCallback((item, index) => {
+    return item?.id?.toString() || `product_${index}`;
+  }, []);
 
-  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+  // Render footer for loading more indicator
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    
+    return (
+      <View style={styles.loadingMoreContainer}>
+        <ActivityIndicator size="small" color={theme.colors.primary} />
+        <Text style={styles.loadingMoreText}>Loading more products...</Text>
+      </View>
+    );
+  };
+
+  // Render empty state
+  const renderEmpty = () => {
+    if (loading) return null;
+    
+    return (
+      <View style={styles.emptyContainer}>
+        <Ionicons 
+          name="cube-outline" 
+          size={64} 
+          color={theme.colors.textSecondary} 
+        />
+        <Text style={styles.emptyText}>
+          {searchText ? "No products found" : "No products yet"}
+        </Text>
+        {!searchText && (
+          <Text style={styles.emptySubText}>
+            Tap the + button to add your first product
+          </Text>
+        )}
+      </View>
+    );
+  };
+
+  // Render item with error handling
+  const renderItem = useCallback(({ item, index }) => {
+    if (!item || !item.id) {
+      return null;
+    }
+    
+    return (
+      <ProductCard 
+        product={item} 
+        onPress={goToDetails} 
+      />
+    );
+  }, [goToDetails]);
 
   return (
     <View style={styles.container}>
@@ -100,58 +178,36 @@ export default function ProductScreen() {
           style={styles.searchInput}
           placeholderTextColor={theme.colors.textSecondary}
         />
+        {searchText.length > 0 && (
+          <TouchableOpacity onPress={() => handleSearch("")}>
+            <Ionicons name="close-circle" size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {loading ? (
+      {loading && page === 1 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      ) : paginatedData.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No products found</Text>
+          <Text style={styles.loadingText}>Loading products...</Text>
         </View>
       ) : (
-        <>
-          <FlatList
-            data={paginatedData}
-            keyExtractor={(item, index) => item.id + "_" + index}
-            numColumns={2}
-            contentContainerStyle={styles.list}
-            renderItem={({ item }) => (
-              <ProductCard product={item} onPress={goToDetails} />
-            )}
-          />
-
-          <View style={styles.paginationContainer}>
-            <TouchableOpacity
-              onPress={() => page > 1 && setPage(page - 1)}
-              disabled={page === 1}
-              style={page === 1 ? styles.disabled : {}}
-            >
-              <Ionicons
-                name="chevron-back-circle"
-                size={32}
-                color={theme.colors.primary}
-              />
-            </TouchableOpacity>
-
-            <Text style={styles.pageText}>
-              Page {page} of {totalPages}
-            </Text>
-
-            <TouchableOpacity
-              onPress={() => page < totalPages && setPage(page + 1)}
-              disabled={page === totalPages}
-              style={page === totalPages ? styles.disabled : {}}
-            >
-              <Ionicons
-                name="chevron-forward-circle"
-                size={32}
-                color={theme.colors.primary}
-              />
-            </TouchableOpacity>
-          </View>
-        </>
+        <FlatList
+          data={filteredProducts}
+          keyExtractor={keyExtractor}
+          numColumns={2}
+          contentContainerStyle={styles.list}
+          renderItem={renderItem}
+          ListEmptyComponent={renderEmpty}
+          ListFooterComponent={renderFooter}
+          onEndReached={loadMoreProducts}
+          onEndReachedThreshold={0.1}
+          showsVerticalScrollIndicator={false}
+          bounces={true}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          initialNumToRender={10}
+        />
       )}
     </View>
   );
@@ -180,26 +236,12 @@ const styles = StyleSheet.create({
     fontSize: theme.fonts.size.md,
     backgroundColor: "transparent",
     marginLeft: 8,
+    marginRight: 8,
   },
   list: {
     paddingBottom: 20,
     paddingHorizontal: 2,
-  },
-  paginationContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 14,
-    gap: 10,
-  },
-  disabled: {
-    opacity: 0.4,
-  },
-  pageText: {
-    fontSize: theme.fonts.size.md,
-    fontWeight: "600",
-    marginHorizontal: 18,
-    color: theme.colors.text,
+    flexGrow: 1,
   },
   fab: {
     ...theme.fab,
@@ -210,15 +252,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: theme.colors.background,
   },
+  loadingText: {
+    marginTop: 10,
+    fontSize: theme.fonts.size.md,
+    color: theme.colors.textSecondary,
+  },
+  loadingMoreContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+    gap: 10,
+  },
+  loadingMoreText: {
+    fontSize: theme.fonts.size.sm,
+    color: theme.colors.textSecondary,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   emptyText: {
     fontSize: theme.fonts.size.lg,
     color: theme.colors.textSecondary,
-    fontWeight: "500",
+    fontWeight: "600",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  emptySubText: {
+    fontSize: theme.fonts.size.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 8,
+    textAlign: "center",
+    opacity: 0.8,
   },
 });
