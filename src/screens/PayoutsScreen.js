@@ -28,6 +28,9 @@ export default function PayoutsScreen({ route, navigation }) {
     const [summary, setSummary] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height);
+    
+    const totalNotPaidPayouts = payouts.filter(item=>item.status.toLowerCase()==="pending").reduce((acc, item) => acc + parseFloat(item.amount), 0);
+    
 
     useEffect(() => {
         const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -67,7 +70,7 @@ export default function PayoutsScreen({ route, navigation }) {
             return;
         }
 
-        if (amount > summary.remaining_balance) {
+        if (amount > (summary.remaining_balance - totalNotPaidPayouts)) {
             Alert.alert('Request Failed', 'You do not have enough balance for this payout');
             return;
         }
@@ -168,7 +171,7 @@ export default function PayoutsScreen({ route, navigation }) {
                             {summary && (
                                 <View style={styles.summaryContainer}>
                                     <View style={styles.balanceInfo}>
-                                        <Text style={styles.summaryText}>$ {summary.remaining_balance}</Text>
+                                        <Text style={styles.summaryText}>$ {summary.remaining_balance.toFixed(3)}</Text>
                                         <Text style={styles.balanceLabel}>Available Balance</Text>
                                     </View>
                                     <TouchableOpacity
