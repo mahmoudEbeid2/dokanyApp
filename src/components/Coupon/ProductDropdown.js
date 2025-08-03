@@ -14,7 +14,6 @@ const ProductDropdown = ({ id, value, onChange }) => {
     try {
       const token = await AsyncStorage.getItem("token");
       
-      // Use the new endpoint to get all products at once
       const res = await fetch(`${API}/products/seller/products`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -37,7 +36,7 @@ const ProductDropdown = ({ id, value, onChange }) => {
             key: product.id,
             icon: () => (
               <Image 
-                source={{ uri: product.images?.[0]?.image || 'https://via.placeholder.com/40' }} 
+                source={{ uri: product.images?.[0]?.image || 'https://ui-avatars.com/api/?name=Product&background=6c63ff&color=fff&size=200&rounded=true&bold=true' }} 
                 style={styles.productImage}
                 resizeMode="cover"
               />

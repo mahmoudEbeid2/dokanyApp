@@ -5,7 +5,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 
 export default function OrderCard({ name, orderNumber, price, image, status }) {
   const fullName = name || "Unknown Customer";
-
+  console.log(image,name);
   const avatarSource = image
     ? typeof image === "string"
       ? { uri: image }

@@ -38,14 +38,18 @@ export default function LastOrders() {
         return order.customer.name;
       } else if (order.customer.first_name && order.customer.last_name) {
         return `${order.customer.first_name} ${order.customer.last_name}`;
+      } else if (order.customer.f_name) {
+        return order.customer.f_name;
+      } else if (order.customer.l_name) {
+        return order.customer.l_name;
       }
     }
     return "Customer Account";
   };
 
   const getCustomerImage = (order) => {
-    if (order.customer && order.customer.profile_image) {
-      return order.customer.profile_image;
+    if (order.customer && order.customer.profile_imge) {
+      return order.customer.profile_imge;
     }
     return require('../../assets/avtar.jpg');
   };

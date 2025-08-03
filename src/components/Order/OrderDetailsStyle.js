@@ -71,6 +71,8 @@ const customerInfoStyle = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: theme.radius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
   },
   name: {
     fontSize: theme.fonts.size.md,
