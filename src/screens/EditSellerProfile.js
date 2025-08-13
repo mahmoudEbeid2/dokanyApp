@@ -1,25 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-  View, Text, TextInput, Image, TouchableOpacity,
-  StyleSheet, ScrollView, Alert, Dimensions, Platform, StatusBar, KeyboardAvoidingView,
-} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+  View,
+  Text,
+  TextInput,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Dimensions,
+  Platform,
+  StatusBar,
+  KeyboardAvoidingView,
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API } from "@env";
-import { AntDesign } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import theme from '../utils/theme';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { AntDesign } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import theme from "../utils/theme";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function EditSellerProfile() {
   const [token, setToken] = useState(null);
   const [themes, setThemes] = useState([]);
-  const navigation = useNavigation(); 
-  const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height);
+  const navigation = useNavigation();
+  const [screenHeight, setScreenHeight] = useState(
+    Dimensions.get("window").height
+  );
 
   useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+    const subscription = Dimensions.addEventListener("change", ({ window }) => {
       setScreenHeight(window.height);
     });
 
@@ -29,24 +41,28 @@ export default function EditSellerProfile() {
   }, []);
 
   const [form, setForm] = useState({
-    id: '',
-    user_name: '',
-    f_name: '',
-    l_name: '',
-    email: '',
-    phone: '',
-    city: '',
-    governorate: '',
-    country: '',
-    subdomain: '',
-    payout_method: '',
-    password: '',
-    role: '',
-    theme_id: '',
-    profile_imge: '',
-    logo: '',
-    image_public_id: '',
-    logo_public_id: '',
+    id: "",
+    user_name: "",
+    f_name: "",
+    l_name: "",
+    email: "",
+    phone: "",
+    city: "",
+    governorate: "",
+    country: "",
+    subdomain: "",
+    payout_method: "",
+    password: "",
+    role: "",
+    theme_id: "",
+    profile_imge: "",
+    logo: "",
+    image_public_id: "",
+    logo_public_id: "",
+    faceBook: "",
+    instagram: "",
+    x: "",
+    pinterest: "",
   });
 
   const [profilePreview, setProfilePreview] = useState(null);
@@ -55,7 +71,7 @@ export default function EditSellerProfile() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const storedToken = await AsyncStorage.getItem('token');
+        const storedToken = await AsyncStorage.getItem("token");
         const authHeader = `Bearer ${storedToken}`;
         setToken(authHeader);
 
@@ -64,14 +80,13 @@ export default function EditSellerProfile() {
         });
 
         const sellerData = await sellerRes.json();
-        setForm({ ...sellerData, password: '' });
+        setForm({ ...sellerData, password: "" });
         setProfilePreview(sellerData.profile_imge);
         setLogoPreview(sellerData.logo);
 
         const themeRes = await fetch(`${API}/themes`);
         const themeData = await themeRes.json();
         setThemes(themeData);
-
       } catch (err) {
         console.log("Error loading data:", err.message);
         Alert.alert("Error", "Failed to load profile data.");
@@ -82,7 +97,7 @@ export default function EditSellerProfile() {
   }, []);
 
   const handleChange = (key, value) => {
-    setForm(prev => ({ ...prev, [key]: value }));
+    setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const pickImage = async (type) => {
@@ -101,46 +116,92 @@ export default function EditSellerProfile() {
       }
     }
   };
-const validateForm = () => {
-  const requiredFields = ['user_name', 'f_name', 'email', 'phone', 'city', 'country'];
-  for (let field of requiredFields) {
-    if (!form[field]) {
-      Alert.alert("Missing Field", `Please enter ${field.replace(/_/g, " ")}`);
+
+  const validateForm = () => {
+    const requiredFields = [
+      "user_name",
+      "f_name",
+      "email",
+      "phone",
+      "city",
+      "country",
+    ];
+    for (let field of requiredFields) {
+      if (!form[field]) {
+        Alert.alert(
+          "Missing Field",
+          `Please enter ${field.replace(/_/g, " ")}`
+        );
+        return false;
+      }
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
       return false;
     }
-  }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(form.email)) {
-    Alert.alert("Invalid Email", "Please enter a valid email address.");
-    return false;
-  }
+    if (form.password && form.password.length < 6) {
+      Alert.alert("Weak Password", "Password should be at least 6 characters.");
+      return false;
+    }
 
-  if (form.password && form.password.length < 6) {
-    Alert.alert("Weak Password", "Password should be at least 6 characters.");
-    return false;
-  }
+    const urlRegex =
+      /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
 
-  return true;
-};
+    const socialFields = [
+      { key: "faceBook", name: "Facebook" },
+      { key: "instagram", name: "Instagram" },
+      { key: "x", name: "X (Twitter)" },
+      { key: "pinterest", name: "Pinterest" },
+    ];
+
+    for (const field of socialFields) {
+      if (form[field.key] && !urlRegex.test(form[field.key])) {
+        Alert.alert(
+          "Invalid URL",
+          `Please enter a valid URL for ${field.name}.`
+        );
+        return false;
+      }
+    }
+
+    return true;
+  };
 
   const handleSubmit = async () => {
-      if (!validateForm()) return;
+    if (!validateForm()) return;
 
     try {
       const formData = new FormData();
 
       for (let key of [
-        'user_name', 'f_name', 'l_name', 'email', 'phone',
-        'city', 'governorate', 'country', 'subdomain',
-        'payout_method', 'role', 'theme_id', 'image_public_id', 'logo_public_id'
+        "user_name",
+        "f_name",
+        "l_name",
+        "email",
+        "phone",
+        "city",
+        "governorate",
+        "country",
+        "subdomain",
+        "payout_method",
+        "role",
+        "theme_id",
+        "image_public_id",
+        "logo_public_id",
+        "faceBook",
+        "instagram",
+        "x",
+        "pinterest",
       ]) {
         if (form[key]) formData.append(key, form[key]);
       }
 
-      if (form.password) formData.append('password', form.password);
+      if (form.password) formData.append("password", form.password);
 
-      if (profilePreview && !profilePreview.startsWith('http')) {
+      if (profilePreview && !profilePreview.startsWith("http")) {
         formData.append("profile_imge", {
           uri: profilePreview,
           type: "image/jpeg",
@@ -148,7 +209,7 @@ const validateForm = () => {
         });
       }
 
-      if (logoPreview && !logoPreview.startsWith('http')) {
+      if (logoPreview && !logoPreview.startsWith("http")) {
         formData.append("logo", {
           uri: logoPreview,
           type: "image/jpeg",
@@ -156,13 +217,16 @@ const validateForm = () => {
         });
       }
 
-      const res = await fetch('https://dokany-api-production.up.railway.app/api/seller/update', {
-        method: 'PUT',
-        headers: {
-          Authorization: token,
-        },
-        body: formData,
-      });
+      const res = await fetch(
+        "https://dokany-api-production.up.railway.app/api/seller/update",
+        {
+          method: "PUT",
+          headers: {
+            Authorization: token,
+          },
+          body: formData,
+        }
+      );
 
       const rawText = await res.text();
       const data = JSON.parse(rawText);
@@ -179,25 +243,38 @@ const validateForm = () => {
   };
 
   return (
-    <LinearGradient colors={[theme.colors.background, '#e8eaf6']} style={{flex:1}}>
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+    <LinearGradient
+      colors={[theme.colors.background, "#e8eaf6"]}
+      style={{ flex: 1 }}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerBar}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={theme.header.backButton}
           >
-            <AntDesign name="arrowleft" size={22} color={theme.colors.primary} />
+            <AntDesign
+              name="arrowleft"
+              size={22}
+              color={theme.colors.primary}
+            />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit Profile</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.card}>
-
           <View style={styles.imagesContainer}>
             <View style={styles.avatarWrapper}>
               <TouchableOpacity onPress={() => pickImage("profile")}>
                 <Image
-                  source={profilePreview ? { uri: profilePreview } : require('../../assets/avtar.jpg')}
+                  source={
+                    profilePreview
+                      ? { uri: profilePreview }
+                      : require("../../assets/avtar.jpg")
+                  }
                   style={styles.profileImage}
                 />
               </TouchableOpacity>
@@ -207,7 +284,11 @@ const validateForm = () => {
             <View style={styles.logoWrapper}>
               <TouchableOpacity onPress={() => pickImage("logo")}>
                 <Image
-                  source={logoPreview ? { uri: logoPreview } : require('../../assets/icon.png')}
+                  source={
+                    logoPreview
+                      ? { uri: logoPreview }
+                      : require("../../assets/icon.png")
+                  }
                   style={styles.logoImage}
                 />
               </TouchableOpacity>
@@ -216,7 +297,18 @@ const validateForm = () => {
           </View>
 
           <View style={styles.formFields}>
-            {["user_name", "f_name", "l_name", "email", "phone", "city", "governorate", "country", "subdomain", "payout_method"].map((key) => (
+            {[
+              "user_name",
+              "f_name",
+              "l_name",
+              "email",
+              "phone",
+              "city",
+              "governorate",
+              "country",
+              "subdomain",
+              "payout_method",
+            ].map((key) => (
               <TextInput
                 key={key}
                 style={styles.input}
@@ -228,6 +320,76 @@ const validateForm = () => {
             ))}
           </View>
 
+          <Text style={styles.label}>Social Media Links</Text>
+          <View style={styles.socialInputContainer}>
+            <AntDesign
+              name="facebook-square"
+              size={20}
+              color={theme.colors.textSecondary}
+              style={styles.socialIcon}
+            />
+            <TextInput
+              style={styles.socialInput}
+              placeholder="Facebook URL"
+              value={form.faceBook}
+              onChangeText={(text) => handleChange("faceBook", text)}
+              placeholderTextColor={theme.colors.textSecondary}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+          </View>
+          <View style={styles.socialInputContainer}>
+            <AntDesign
+              name="instagram"
+              size={20}
+              color={theme.colors.textSecondary}
+              style={styles.socialIcon}
+            />
+            <TextInput
+              style={styles.socialInput}
+              placeholder="Instagram URL"
+              value={form.instagram}
+              onChangeText={(text) => handleChange("instagram", text)}
+              placeholderTextColor={theme.colors.textSecondary}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+          </View>
+          <View style={styles.socialInputContainer}>
+            <AntDesign
+              name="twitter"
+              size={20}
+              color={theme.colors.textSecondary}
+              style={styles.socialIcon}
+            />
+            <TextInput
+              style={styles.socialInput}
+              placeholder="X (Twitter) URL"
+              value={form.x}
+              onChangeText={(text) => handleChange("x", text)}
+              placeholderTextColor={theme.colors.textSecondary}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+          </View>
+          <View style={styles.socialInputContainer}>
+            <AntDesign
+              name="pinterest"
+              size={20}
+              color={theme.colors.textSecondary}
+              style={styles.socialIcon}
+            />
+            <TextInput
+              style={styles.socialInput}
+              placeholder="Pinterest URL"
+              value={form.pinterest}
+              onChangeText={(text) => handleChange("pinterest", text)}
+              placeholderTextColor={theme.colors.textSecondary}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+          </View>
+
           <Text style={styles.label}>Select Theme</Text>
           <View style={styles.themeList}>
             {themes.map((themeItem) => (
@@ -235,11 +397,14 @@ const validateForm = () => {
                 key={themeItem.id}
                 style={[
                   styles.themeCard,
-                  form.theme_id === themeItem.id && styles.selectedThemeCard
+                  form.theme_id === themeItem.id && styles.selectedThemeCard,
                 ]}
                 onPress={() => handleChange("theme_id", themeItem.id)}
               >
-                <Image source={{ uri: themeItem.preview_image }} style={styles.themeImage} />
+                <Image
+                  source={{ uri: themeItem.preview_image }}
+                  style={styles.themeImage}
+                />
                 <Text style={styles.themeName}>{themeItem.name}</Text>
                 {form.theme_id === themeItem.id && (
                   <Text style={styles.selectedText}>Selected</Text>
@@ -248,7 +413,11 @@ const validateForm = () => {
             ))}
           </View>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSubmit} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSubmit}
+            activeOpacity={0.85}
+          >
             <Text style={styles.saveText}>Save Changes</Text>
           </TouchableOpacity>
         </View>
@@ -258,61 +427,38 @@ const validateForm = () => {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
+  safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  keyboardAvoidingView: { flex: 1 },
   container: {
     padding: 20,
     paddingBottom: 50,
     backgroundColor: theme.colors.background,
-    minHeight: Dimensions.get('window').height - 100,
+    minHeight: Dimensions.get("window").height - 100,
   },
   header: { ...theme.header.title, marginBottom: 20, marginTop: 40 },
   imageRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '90%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "90%",
     marginBottom: 10,
   },
-  imageContainer: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  profileImage: {
-    width: 100, height: 100, borderRadius: 50, marginBottom: 6,
-    borderWidth: 2, borderColor: theme.colors.primary,
-  },
-  logoImage: {
-    width: 100, height: 100, borderRadius: 10, marginBottom: 6,
-    borderWidth: 2, borderColor: theme.colors.primary,
-  },
-  imageText: { fontSize: theme.fonts.size.sm, color: theme.colors.textSecondary, textAlign: 'center' },
-  input: {
-    width: '90%',
-    backgroundColor: theme.colors.card,
-    padding: 10,
-    marginVertical: 6,
-    borderRadius: theme.radius.md,
-    color: theme.colors.text,
-    fontSize: theme.fonts.size.md,
-    fontFamily: theme.fonts.regular,
-    ...theme.shadow,
+  imageContainer: { alignItems: "center", flex: 1 },
+  imageText: {
+    fontSize: theme.fonts.size.sm,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
   },
   label: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 12,
     marginBottom: 4,
-    alignSelf: 'flex-start',
-    paddingLeft: 20,
+    alignSelf: "flex-start",
+    paddingLeft: 0,
     color: theme.colors.text,
   },
   payoutMethods: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 10,
     marginBottom: 20,
   },
@@ -329,13 +475,13 @@ const styles = StyleSheet.create({
   },
   payoutText: {
     fontSize: theme.fonts.size.sm,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
     color: theme.colors.text,
   },
   themeList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     gap: 12,
     marginBottom: 20,
   },
@@ -345,9 +491,9 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderRadius: theme.radius.md,
     padding: 8,
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: theme.colors.card,
-    shadowColor: theme.colors.shadow || '#000',
+    shadowColor: theme.colors.shadow || "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
@@ -368,27 +514,15 @@ const styles = StyleSheet.create({
   },
   themeName: {
     fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#333',
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#333",
   },
   selectedText: {
     marginTop: 4,
     fontSize: 12,
-    color: '#6a0dad',
-    fontWeight: 'bold',
-  },
-  saveButton: {
-    backgroundColor: '#6a0dad',
-    paddingHorizontal: 30,
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginBottom: 30,
-  },
-  saveText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: "#6a0dad",
+    fontWeight: "bold",
   },
   backButton: {
     position: "absolute",
@@ -399,24 +533,24 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 50,
     alignItems: "center",
-    justifyContent: "center",   
+    justifyContent: "center",
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 30,
     paddingHorizontal: 10,
-    minHeight: Dimensions.get('window').height,
+    minHeight: Dimensions.get("window").height,
   },
   card: {
     backgroundColor: theme.colors.card,
     borderRadius: 24,
     padding: 24,
-    width: '100%',
+    width: "100%",
     maxWidth: 420,
-    alignSelf: 'center',
-    shadowColor: theme.colors.shadow || '#000',
+    alignSelf: "center",
+    shadowColor: theme.colors.shadow || "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.18,
     shadowRadius: 16,
@@ -424,19 +558,13 @@ const styles = StyleSheet.create({
     marginVertical: 30,
   },
   imagesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 18,
-    width: '100%',
+    width: "100%",
   },
-  avatarWrapper: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  logoWrapper: {
-    alignItems: 'center',
-    flex: 1,
-  },
+  avatarWrapper: { alignItems: "center", flex: 1 },
+  logoWrapper: { alignItems: "center", flex: 1 },
   profileImage: {
     width: 110,
     height: 110,
@@ -444,7 +572,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 3,
     borderColor: theme.colors.primary,
-    shadowColor: theme.colors.shadow || '#000',
+    shadowColor: theme.colors.shadow || "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -458,17 +586,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 3,
     borderColor: theme.colors.primary,
-    shadowColor: theme.colors.shadow || '#000',
+    shadowColor: theme.colors.shadow || "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 8,
     marginBottom: 8,
   },
-  formFields: {
-    width: '100%',
-    marginBottom: 18,
-  },
+  formFields: { width: "100%", marginBottom: 10 },
   input: {
     backgroundColor: theme.colors.background,
     borderWidth: 1,
@@ -478,7 +603,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fonts.size.md,
     marginBottom: 14,
     color: theme.colors.text,
-    shadowColor: theme.colors.shadow || '#000',
+    shadowColor: theme.colors.shadow || "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -488,9 +613,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     paddingVertical: 16,
     borderRadius: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
-    shadowColor: theme.colors.shadow || '#000',
+    shadowColor: theme.colors.shadow || "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -499,7 +624,7 @@ const styles = StyleSheet.create({
   saveText: {
     color: theme.colors.card,
     fontSize: theme.fonts.size.lg,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 0.5,
   },
   imageText: {
@@ -510,26 +635,49 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: theme.fonts.size.md,
-    color: theme.colors.textSecondary,
-    marginBottom: 8,
-    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginBottom: 12,
+    fontWeight: "bold",
     marginTop: 8,
+    alignSelf: "flex-start",
   },
   headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginTop: 30,
     marginBottom: 10,
-    width: '100%',
+    width: "100%",
     paddingHorizontal: 0,
   },
   headerTitle: {
     ...theme.header.title,
     marginTop: 0,
     marginBottom: 0,
-    alignSelf: 'center',
+    alignSelf: "center",
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
+  },
+  socialInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    marginBottom: 14,
+    shadowColor: theme.colors.shadow || "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  socialIcon: { marginRight: 10 },
+  socialInput: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: theme.fonts.size.md,
+    color: theme.colors.text,
   },
 });
