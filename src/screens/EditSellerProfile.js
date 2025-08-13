@@ -147,23 +147,49 @@ export default function EditSellerProfile() {
       return false;
     }
 
-    const urlRegex =
-      /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
-
     const socialFields = [
-      { key: "faceBook", name: "Facebook" },
-      { key: "instagram", name: "Instagram" },
-      { key: "x", name: "X (Twitter)" },
-      { key: "pinterest", name: "Pinterest" },
+      { key: "faceBook", name: "Facebook", base: "https://www.facebook.com/" },
+      {
+        key: "instagram",
+        name: "Instagram",
+        base: "https://www.instagram.com/",
+      },
+      {
+        key: "x",
+        name: "X (Twitter)",
+        bases: ["https://x.com/", "https://www.twitter.com/"],
+      },
+      {
+        key: "pinterest",
+        name: "Pinterest",
+        base: "https://www.pinterest.com/",
+      },
     ];
 
     for (const field of socialFields) {
-      if (form[field.key] && !urlRegex.test(form[field.key])) {
-        Alert.alert(
-          "Invalid URL",
-          `Please enter a valid URL for ${field.name}.`
-        );
-        return false;
+      const url = form[field.key];
+
+      if (url) {
+        let isValid = false;
+        if (field.bases) {
+          isValid = field.bases.some(
+            (base) => url.startsWith(base) && url.length > base.length
+          );
+        } else {
+          isValid =
+            url.startsWith(field.base) && url.length > field.base.length;
+        }
+
+        if (!isValid) {
+          const validPrefix = field.bases
+            ? field.bases.join(" or ")
+            : field.base;
+          Alert.alert(
+            "Invalid Link",
+            `The ${field.name} URL is not valid. It must start with "${validPrefix}" followed by your profile name.`
+          );
+          return false;
+        }
       }
     }
 
@@ -196,7 +222,9 @@ export default function EditSellerProfile() {
         "x",
         "pinterest",
       ]) {
-        if (form[key]) formData.append(key, form[key]);
+        if (form[key] !== null && form[key] !== undefined) {
+          formData.append(key, form[key]);
+        }
       }
 
       if (form.password) formData.append("password", form.password);
@@ -330,7 +358,7 @@ export default function EditSellerProfile() {
             />
             <TextInput
               style={styles.socialInput}
-              placeholder="Facebook URL"
+              placeholder="https://www.facebook.com/username"
               value={form.faceBook}
               onChangeText={(text) => handleChange("faceBook", text)}
               placeholderTextColor={theme.colors.textSecondary}
@@ -347,7 +375,7 @@ export default function EditSellerProfile() {
             />
             <TextInput
               style={styles.socialInput}
-              placeholder="Instagram URL"
+              placeholder="https://www.instagram.com/username"
               value={form.instagram}
               onChangeText={(text) => handleChange("instagram", text)}
               placeholderTextColor={theme.colors.textSecondary}
@@ -364,7 +392,7 @@ export default function EditSellerProfile() {
             />
             <TextInput
               style={styles.socialInput}
-              placeholder="X (Twitter) URL"
+              placeholder="https://x.com/username"
               value={form.x}
               onChangeText={(text) => handleChange("x", text)}
               placeholderTextColor={theme.colors.textSecondary}
@@ -381,7 +409,7 @@ export default function EditSellerProfile() {
             />
             <TextInput
               style={styles.socialInput}
-              placeholder="Pinterest URL"
+              placeholder="https://www.pinterest.com/username"
               value={form.pinterest}
               onChangeText={(text) => handleChange("pinterest", text)}
               placeholderTextColor={theme.colors.textSecondary}
