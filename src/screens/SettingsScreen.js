@@ -24,6 +24,7 @@ import { sellerAPI } from '../utils/api/api';
 import defaultProfile from '../../assets/Seller.png';
 import * as Clipboard from 'expo-clipboard';
 import theme from '../utils/theme';
+import { useShare } from './../hooks/useShare';
 
 const settings = [
   {
@@ -48,6 +49,7 @@ export default function SettingsScreen({ navigation }) {
   const [seller, setSeller] = useState(null);
   const [loading, setLoading] = useState(true);
   const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height);
+  const { shareContent } = useShare();
 
   const fetchSeller = async () => {
     try {
@@ -102,6 +104,16 @@ export default function SettingsScreen({ navigation }) {
     };
   }, []);
 
+  const handelShare = async () => {
+    const storeLink = `https://${seller?.subdomain}.dokaney.store/`;
+    const shareMessage = `Check out Latest Products on ${seller?.subdomain} Store!\n\n${storeLink}`;
+    try {
+      await shareContent(shareMessage, seller?.subdomain);
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -117,7 +129,7 @@ export default function SettingsScreen({ navigation }) {
           contentContainerStyle={styles.container}
           showsVerticalScrollIndicator={false}
         >
-          {/* هيدر علوي ثابت: */}
+
           <View style={styles.headerBar}>
             <TouchableOpacity
               onPress={() => navigation.goBack()}
@@ -128,7 +140,7 @@ export default function SettingsScreen({ navigation }) {
             <Text style={styles.headerTitle}>Settings</Text>
             <View style={{ width: 40 }} />
           </View>
-          {/* صورة البروفايل: */}
+
           <View style={styles.profileSection}>
             <View style={styles.profileImageWrapper}>
               <Image source={seller?.profile_imge ? { uri: seller.profile_imge } : defaultProfile} style={styles.profileImage} />
@@ -142,9 +154,12 @@ export default function SettingsScreen({ navigation }) {
               <TouchableOpacity onPress={() => { Clipboard.setStringAsync(`@${seller?.subdomain || 'subdomain'}`); if (Platform.OS === 'android') { ToastAndroid.show('Copied to clipboard', ToastAndroid.SHORT); } else { Alert.alert('Copied!', 'Subdomain copied to clipboard.'); } }} style={styles.copyIconBtn}>
                 <MaterialIcons name="content-copy" size={16} color={theme.colors.primary} />
               </TouchableOpacity>
+              <TouchableOpacity onPress={() => { handelShare(); }} style={styles.copyIconBtn}>
+                <MaterialIcons name="share" size={16} color={theme.colors.primary} />
+              </TouchableOpacity>
             </View>
           </View>
-          {/* كروت الخيارات: */}
+
           {settings.map((setting, index) => (
             <View key={index} style={styles.optionCard}>
               <TouchableOpacity
