@@ -1,4 +1,4 @@
-import React, { useEffect, useState ,useCallback, useRef} from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -26,11 +26,9 @@ import { StatusBar } from "expo-status-bar";
 import theme from '../../utils/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useShare } from '../../hooks/useShare';
 
-// { route, navigation }
-const ProductDetails = ({ navigation, route}) => {
-  // const token = await AsyncStorage.getItem("token");
-//   const token ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtZGRmNTVxNzAwMDBzNnlweG5oaThtOGgiLCJyb2xlIjoic2VsbGVyIiwiaWF0IjoxNzUzMTIxMjg1LCJleHAiOjE3NTM3MjYwODV9.EjqeiVhVpkBWo3kyJDO5ngPOHzWUAx3_kbis8kxoBxY";
+const ProductDetails = ({ navigation, route }) => {
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +38,8 @@ const ProductDetails = ({ navigation, route}) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const flatListRef = useRef(null);
   const modalFlatListRef = useRef(null);
+
+  const { shareContent } = useShare();
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -53,7 +53,7 @@ const ProductDetails = ({ navigation, route}) => {
 
   //   const { product } = route.params;
   const productId = route.params?.productId;
-  
+
   // Validate productId
   if (!productId) {
     Alert.alert("Error", "Product ID not found. Please try again.");
@@ -61,22 +61,21 @@ const ProductDetails = ({ navigation, route}) => {
     return null;
   }
 
- useFocusEffect (useCallback(() => {
+  useFocusEffect(useCallback(() => {
     const fetchProduct = async () => {
-        
+
       try {
-                 const response = await fetch(
-           `${API}/products/${productId}`
-         );
+        const response = await fetch(
+          `${API}/products/${productId}`
+        );
         const data = await response.json();
-        console.log("Product:", data);
         setProduct(data);
       } catch (error) {
         console.error("Error fetching product:", error);
       }
     };
     const fetchReviews = async () => {
-        const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem('token');
       try {
         const response = await fetch(
           `${API}/reviews/${productId}`,
@@ -87,11 +86,10 @@ const ProductDetails = ({ navigation, route}) => {
           }
         );
         const data = await response.json();
-        console.log("Reviews:", data);
         setReviews(data);
       } catch (error) {
         console.error("Error fetching reviews:", error);
-      }finally {
+      } finally {
         setLoading(false);
       }
     };
@@ -99,9 +97,9 @@ const ProductDetails = ({ navigation, route}) => {
     fetchProduct();
     fetchReviews();
   }, [])
-);
+  );
   const handleEdit = () => {
-  navigation.navigate("EditProduct", { productId });
+    navigation.navigate("EditProduct", { productId });
 
 
     // alert("Edit functionality is under construction.");
@@ -124,18 +122,15 @@ const ProductDetails = ({ navigation, route}) => {
                 return;
               }
 
-                             // Use the correct API endpoint
-               const res = await fetch(`${API}/products/${productId}`, {
-                 method: "DELETE",
-                 headers: {
-                   Authorization: `Bearer ${token}`,
-                   'Content-Type': 'application/json',
-                 },
-               });
+              // Use the correct API endpoint
+              const res = await fetch(`${API}/products/${productId}`, {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
 
-                             console.log("Delete response status:", res.status);
-               console.log("Delete URL:", `${API}/products/${productId}`);
-               console.log("Token exists:", !!token);
 
               if (res.ok) {
                 Alert.alert("Success", "Product deleted successfully!", [
@@ -152,11 +147,11 @@ const ProductDetails = ({ navigation, route}) => {
                   console.error("Error parsing response:", parseError);
                   errorData = { message: "Failed to parse server response" };
                 }
-                
+
                 console.error("Delete error response:", errorData);
                 console.error("Response status:", res.status);
                 console.error("Response status text:", res.statusText);
-                
+
                 let errorMessage = "Unknown error";
                 if (errorData.error) {
                   errorMessage = errorData.error;
@@ -187,42 +182,56 @@ const ProductDetails = ({ navigation, route}) => {
     );
   };
 
-//   handleDeleteReview
-const handleDeleteReview = async (reviewId) => {
-  try {
-    const token = await AsyncStorage.getItem('token');
-    if (!token) {
-      Alert.alert("Error", "Authentication token not found. Please login again.");
-      return;
-    }
 
-    const res = await fetch(
-      `${API}/reviews/${reviewId}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+
+  const handleShare = async () => {
+    const productLink = `https://${product.seller.subdomain}.dokaney.store/products/${product.id}`;
+    const shareMessage = `Check out ${product.title} on Dokaney Store!\n\n${productLink}`;
+
+    try {
+      await shareContent(shareMessage, product.title);
+    } catch (error) {
+      console.error("Error sharing product:", error);
+      Alert.alert("Error", "Failed to share product. Please try again.");
+    }
+  };
+
+  //   handleDeleteReview
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert("Error", "Authentication token not found. Please login again.");
+        return;
       }
-    );
 
-    if (res.ok) {
-      Alert.alert("Success", "Review deleted successfully!");
-      setReviews(reviews.filter((review) => review.id !== reviewId));
-    } else {
-      const errorData = await res.json();
-      console.error("Delete review error response:", errorData);
-      Alert.alert(
-        "Error",
-        `Failed to delete review: ${errorData.message || "Unauthorized or Unknown error"}`
+      const res = await fetch(
+        `${API}/reviews/${reviewId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
       );
+
+      if (res.ok) {
+        Alert.alert("Success", "Review deleted successfully!");
+        setReviews(reviews.filter((review) => review.id !== reviewId));
+      } else {
+        const errorData = await res.json();
+        console.error("Delete review error response:", errorData);
+        Alert.alert(
+          "Error",
+          `Failed to delete review: ${errorData.message || "Unauthorized or Unknown error"}`
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      Alert.alert("Error", "Network error. Please check your connection and try again.");
     }
-  } catch (error) {
-    console.error("Error deleting review:", error);
-    Alert.alert("Error", "Network error. Please check your connection and try again.");
   }
-}
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color={theme.colors.primary} />;
 
@@ -248,7 +257,7 @@ const handleDeleteReview = async (reviewId) => {
   );
 
   const renderImageItem = ({ item, index }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.imageSlide}
       onPress={() => handleImagePress(index)}
       activeOpacity={0.9}
@@ -269,7 +278,7 @@ const handleDeleteReview = async (reviewId) => {
 
   const renderImageIndicator = () => {
     if (!product?.images || product.images.length <= 1) return null;
-    
+
     return (
       <View style={styles.indicatorContainer}>
         {product.images.map((_, index) => (
@@ -288,7 +297,7 @@ const handleDeleteReview = async (reviewId) => {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.safeArea}>
-                 <StatusBar barStyle="dark-content" />
+        <StatusBar barStyle="dark-content" />
         <LinearGradient colors={[theme.colors.background, '#e8eaf6']} style={styles.gradientBg}>
           <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
             <View style={styles.headerContainer}>
@@ -301,7 +310,7 @@ const handleDeleteReview = async (reviewId) => {
               <Text style={styles.title}>Product Details</Text>
               <View style={{ width: 40 }} />
             </View>
-            
+
             <View style={styles.imageSliderContainer}>
               {product?.images && product.images.length > 0 ? (
                 <>
@@ -325,10 +334,10 @@ const handleDeleteReview = async (reviewId) => {
                 </View>
               )}
             </View>
-            
+
             <View style={styles.contentContainer}>
               <Text style={styles.name}>{product?.title}</Text>
-              
+
               <View style={styles.priceCard}>
                 {product?.discount ? (
                   <View style={styles.priceRow}>
@@ -348,12 +357,12 @@ const handleDeleteReview = async (reviewId) => {
                   </View>
                 )}
               </View>
-              
+
               <View style={styles.descriptionCard}>
                 <Text style={styles.descriptionTitle}>Description</Text>
                 <Text style={styles.description}>{product?.description}</Text>
               </View>
-              
+
               <View style={styles.infoRow}>
                 <View style={styles.infoCard}>
                   <MaterialIcons name="category" size={20} color={theme.colors.primary} />
@@ -366,7 +375,7 @@ const handleDeleteReview = async (reviewId) => {
                   <Text style={styles.infoValue}>{product?.status}</Text>
                 </View>
               </View>
-              
+
               <View style={styles.actionsRow}>
                 <TouchableOpacity
                   style={styles.editButton}
@@ -385,7 +394,7 @@ const handleDeleteReview = async (reviewId) => {
                   <Text style={styles.deleteButtonText}>Delete</Text>
                 </TouchableOpacity>
               </View>
-              
+
               <View style={styles.reviewsSection}>
                 <Text style={styles.reviewsTitle}>Reviews</Text>
                 {reviews?.length > 0 ? (
@@ -448,6 +457,13 @@ const handleDeleteReview = async (reviewId) => {
               </View>
             </View>
           </ScrollView>
+          <TouchableOpacity
+            style={styles.fab}
+            activeOpacity={0.7}
+            onPress={() => handleShare()}
+          >
+            <MaterialIcons name="share" size={20} color={theme.colors.card} />
+          </TouchableOpacity>
         </LinearGradient>
 
         {/* Image Modal */}
@@ -470,7 +486,7 @@ const handleDeleteReview = async (reviewId) => {
               </Text>
               <View style={{ width: 40 }} />
             </View>
-            
+
             <View style={styles.modalContent}>
               {product?.images && (
                 <FlatList
@@ -583,6 +599,10 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
+  //Share
+  fab: {
+    ...theme.fab,
+  },
   deleteButton: {
     backgroundColor: theme.colors.error,
     padding: 10,
@@ -662,7 +682,7 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
   },
-        backButton: {
+  backButton: {
     position: "absolute",
     top: 15,
     left: 20,
