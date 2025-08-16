@@ -1,7 +1,9 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API } from "@env";
 
-const BASE_URL = "https://dokany-api-production.up.railway.app/";
+
+const BASE_URL = `${API}/`;
 
 export const authAPI = axios.create({
   baseURL: `${BASE_URL}auth/`,
