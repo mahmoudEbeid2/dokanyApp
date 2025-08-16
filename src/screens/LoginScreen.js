@@ -12,12 +12,15 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   KeyboardAvoidingView,
-  Dimensions
+  Dimensions,
+  Alert
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authAPI } from "../utils/api/api";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import theme from '../utils/theme';
+import { API } from "@env";
+import axios from "axios";
 
 
 
@@ -28,6 +31,8 @@ export default function LoginScreen({ navigation }) {
   const [errors, setErrors] = useState({});
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height);
+  const [loading, setLoading] = useState(false);
+  const [verificationModal, setVerificationModal] = useState(false);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
@@ -66,11 +71,33 @@ export default function LoginScreen({ navigation }) {
       setErrors({});
       navigation.navigate("MainTabs");
     } catch (err) {
-      console.error(err);
-      console.error("Login error:", err.message, err.stack);
+      if (err.response?.data?.error === "Email not verified") {
+        setVerificationModal(true);
+        return;
+      }
       setErrors({
         general: err?.response?.data?.error || "Login failed",
       });
+    }
+  };
+
+  const handleResendVerification = async () => {
+    try {
+      setLoading(true);
+      const apiUrl = `${API}/api/email-verification/resend-user`;
+
+      await axios.post(apiUrl, {
+        email: email,
+        role: "seller"
+      });
+      Alert.alert("Success", "Verification email sent successfully! Please check your inbox.");
+      setVerificationModal(false);
+    } catch (error) {
+      const errorData = error.response?.data;
+      const errorMsg = errorData?.error || "Failed to resend verification email.";
+      Alert.alert("Error", errorMsg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,13 +105,13 @@ export default function LoginScreen({ navigation }) {
     <>
       <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
           style={styles.keyboardAvoidingView}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <ScrollView 
+            <ScrollView
               contentContainerStyle={[
                 styles.container,
                 keyboardVisible && styles.containerKeyboardVisible
@@ -98,7 +125,23 @@ export default function LoginScreen({ navigation }) {
                 </View>
                 <View style={styles.loginCardModern}>
                   <Text style={styles.title}>Login</Text>
-                  
+                  {verificationModal && (
+                    <View style={styles.alertContainer}>
+                      <Text style={styles.alertTitle}>Email Verification Required</Text>
+                      <Text style={styles.alertText}>
+                        Please check your email and click the verification link to activate your account.
+                      </Text>
+                      <TouchableOpacity
+                        style={[styles.resendButton, loading && styles.resendButtonDisabled]}
+                        onPress={handleResendVerification}
+                        disabled={loading}
+                      >
+                        <Text style={styles.resendButtonText}>
+                          {loading ? "Sending..." : "Resend Verification Email"}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>Email</Text>
                     <View style={styles.inputContainer}>
@@ -224,21 +267,59 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: theme.colors.text,
   },
+  alertContainer: {
+    backgroundColor: "#fff3cd",
+    borderWidth: 1,
+    borderColor: "#ffeaa7",
+    padding: 15,
+    borderRadius: 5,
+    marginBottom: 20,
+    alignItems: 'center',
+    width: '100%',
+  },
+  alertTitle: {
+    color: "#856404",
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  alertText: {
+    color: "#856404",
+    fontSize: 14,
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  resendButton: {
+    backgroundColor: "#007bff",
+    color: "white",
+    borderWidth: 0,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+  },
+  resendButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  resendButtonDisabled: {
+    backgroundColor: "#ccc",
+  },
   inputGroup: {
     width: '100%',
     marginBottom: 20,
   },
-  inputContainer: { 
-    width: '100%', 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    borderColor: theme.colors.border, 
-    borderWidth: 1, 
-    borderRadius: 20, 
-    paddingHorizontal: 16, 
-    marginBottom: 16, 
-    paddingVertical: 12, 
-    backgroundColor: theme.colors.card, 
+  inputContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: theme.colors.border,
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    paddingVertical: 12,
+    backgroundColor: theme.colors.card,
     ...theme.shadow,
     minHeight: 50,
   },
@@ -264,13 +345,13 @@ const styles = StyleSheet.create({
     textAlign: 'start',
     paddingHorizontal: 10,
   },
-  button: { 
-    width: '100%', 
-    backgroundColor: theme.colors.primary, 
-    padding: 18, 
-    borderRadius: 25, 
-    alignItems: 'center', 
-    marginTop: 24, 
+  button: {
+    width: '100%',
+    backgroundColor: theme.colors.primary,
+    padding: 18,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginTop: 24,
     marginBottom: 16,
     shadowColor: theme.colors.shadow || '#000',
     shadowOffset: { width: 0, height: 8 },
@@ -280,10 +361,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: theme.colors.primary,
   },
-  buttonText: { 
-    color: theme.colors.card, 
-    fontSize: theme.fonts.size.md, 
-    fontWeight: 'bold', 
+  buttonText: {
+    color: theme.colors.card,
+    fontSize: theme.fonts.size.md,
+    fontWeight: 'bold',
     letterSpacing: 0.5,
   },
   linkButton: {
@@ -305,30 +386,30 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textDecorationLine: 'underline',
   },
-  logoCircleModern: { 
-    backgroundColor: theme.colors.card, 
-    borderRadius: 48, 
-    width: 96, 
-    height: 96, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    marginTop: 40, 
-    marginBottom: 24, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 6 }, 
-    shadowOpacity: 0.18, 
-    shadowRadius: 18, 
-    elevation: 10, 
+  logoCircleModern: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 48,
+    width: 96,
+    height: 96,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 40,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 10,
     alignSelf: 'center',
     borderWidth: 2,
     borderColor: theme.colors.primary,
   },
-  loginCardModern: { 
-    backgroundColor: theme.colors.card, 
-    borderRadius: 28, 
-    padding: 32, 
-    marginBottom: 32, 
-    width: '100%', 
+  loginCardModern: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 28,
+    padding: 32,
+    marginBottom: 32,
+    width: '100%',
     shadowColor: theme.colors.shadow || '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,

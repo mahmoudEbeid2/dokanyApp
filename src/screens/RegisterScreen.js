@@ -258,7 +258,7 @@ export default function RegisterScreen({ navigation }) {
         },
       });
       // On success, show a success alert and navigate to the login screen
-      Alert.alert('Success', 'Registration successful! Please login with your new account.');
+      Alert.alert('Success', 'Registration successful! Please check your email to verify your account before logging in .');
       navigation.navigate('Login');
     } catch (err) {
       console.log(err?.response?.data);
