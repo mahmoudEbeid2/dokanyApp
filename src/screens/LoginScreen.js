@@ -90,7 +90,7 @@ export default function LoginScreen({ navigation }) {
         email: email,
         role: "seller"
       });
-      Alert.alert("Success", "Verification email sent successfully! Please check your inbox.");
+      Alert.alert("Success", "Verification email sent successfully! Please check your Email inbox.");
       setVerificationModal(false);
     } catch (error) {
       const errorData = error.response?.data;
