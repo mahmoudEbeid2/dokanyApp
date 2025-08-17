@@ -13,6 +13,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Modal,
+  Linking,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons, MaterialIcons, FontAwesome, AntDesign, FontAwesome6 } from '@expo/vector-icons';
@@ -22,6 +24,7 @@ import { API } from "@env";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import theme from '../utils/theme';
+import { WebView } from 'react-native-webview';
 
 const fields = [
   { name: 'user_name', label: 'Username', placeholder: 'Enter Username', icon: <FontAwesome name="user" size={20} /> },
@@ -57,6 +60,8 @@ export default function RegisterScreen({ navigation }) {
   const [themes, setThemes] = useState([]);
   const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height);
   const [currentScreen, setCurrentScreen] = useState(1);
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
+  const [selectedThemePreview, setSelectedThemePreview] = useState(null);
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -314,6 +319,10 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
+  const handlePreviewTheme = (themeId) => {
+    setSelectedThemePreview(themeId);
+    setPreviewModalVisible(true);
+  };
 
   const renderScreen = () => {
     switch (currentScreen) {
@@ -406,20 +415,29 @@ export default function RegisterScreen({ navigation }) {
               <View style={styles.themeList}>
                 {themes.length > 0 ? (
                   themes.map((themeItem) => (
-                    <TouchableOpacity
-                      key={themeItem.id}
-                      style={[
-                        styles.themeCard,
-                        selectedTheme === themeItem.id && styles.selectedThemeCard
-                      ]}
-                      onPress={() => setSelectedTheme(themeItem.id)}
-                    >
-                      <Image source={{ uri: themeItem.preview_image }} style={styles.themeImage} />
-                      <Text style={styles.themeName}>{themeItem.name}</Text>
-                      {selectedTheme === themeItem.id && (
-                        <Text style={styles.selectedText}>Selected</Text>
+                    <View key={themeItem.id} style={styles.themeCardContainer}>
+                      <TouchableOpacity
+                        style={[
+                          styles.themeCard,
+                          selectedTheme === themeItem.id && styles.selectedThemeCard
+                        ]}
+                        onPress={() => setSelectedTheme(themeItem.id)}
+                      >
+                        <Image source={{ uri: themeItem.preview_image }} style={styles.themeImage} />
+                        <Text style={styles.themeName}>{themeItem.name}</Text>
+                        {selectedTheme === themeItem.id && (
+                          <Text style={styles.selectedText}>Selected</Text>
+                        )}
+                      </TouchableOpacity>
+                      {themeItem.preview_url && (
+                        <TouchableOpacity
+                          style={styles.previewButton}
+                          onPress={() => handlePreviewTheme(themeItem.id)}
+                        >
+                          <Text style={styles.previewButtonText}>Preview</Text>
+                        </TouchableOpacity>
                       )}
-                    </TouchableOpacity>
+                    </View>
                   ))
                 ) : (
                   <Text style={styles.noThemesText}>No themes available</Text>
@@ -506,6 +524,40 @@ export default function RegisterScreen({ navigation }) {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      <Modal
+        visible={previewModalVisible}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setPreviewModalVisible(false)}
+      >
+        <View style={styles.modalFullScreen}>
+          <View style={styles.modalHeaderContainer}>
+            <Text style={styles.modalHeader}>
+              {themes.find(theme => theme.id === selectedThemePreview)?.name || 'Theme Preview'}
+            </Text>
+            <TouchableOpacity 
+              style={styles.closeButtonSmall}
+              onPress={() => setPreviewModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          {themes.find(theme => theme.id === selectedThemePreview)?.preview_url ? (
+            <WebView
+              source={{ uri: themes.find(theme => theme.id === selectedThemePreview).preview_url }}
+              style={styles.webView}
+              startInLoadingState={true}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+            />
+          ) : (
+            <View style={styles.noPreviewContainer}>
+              <Text style={styles.noThemesText}>No website preview available for this theme.</Text>
+            </View>
+          )}
+        </View>
+      </Modal>
     </>
   );
 }
@@ -662,6 +714,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
+  themeCardContainer: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   themeCard: {
     width: 130,
     borderWidth: 1,
@@ -695,10 +751,41 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
   },
+  themeImage: {
+    width: 100,
+    height: 100,
+    borderRadius: theme.radius.sm,
+    marginBottom: 6,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+  },
+  themeName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#333',
+  },
   selectedText: {
     marginTop: 4,
     fontSize: 12,
     color: '#6a0dad',
+    fontWeight: 'bold',
+  },
+  previewButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: theme.radius.sm,
+    marginTop: 8,
+    shadowColor: theme.colors.shadow || '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  previewButtonText: {
+    color: theme.colors.card,
+    fontSize: 12,
     fontWeight: 'bold',
   },
   noThemesText: {
@@ -746,5 +833,59 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     backgroundColor: theme.colors.primary,
+  },
+  modalFullScreen: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  modalHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: theme.colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  modalHeader: {
+    fontSize: theme.fonts.size.lg,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    flex: 1,
+  },
+  closeButtonSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: theme.colors.card,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  webView: {
+    flex: 1,
+  },
+  noPreviewContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  closeButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 15,
+    borderRadius: 30,
+    alignItems: 'center',
+    width: '100%',
+    shadowColor: theme.colors.shadow || '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
 });
