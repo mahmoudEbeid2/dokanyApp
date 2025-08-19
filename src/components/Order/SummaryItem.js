@@ -10,7 +10,7 @@ function SummaryItem({ order }) {
       <Image source={{ uri: imageUrl }} style={summaryItemStyle.image} />
       <View>
         <Text style={summaryItemStyle.name}>
-          {product.title.split(" ").slice(0, 4).join(" ")}
+          {product.title.split(" ").slice(0, 3).join(" ")}
         </Text>
         <Text style={summaryItemStyle.data}>Price: ${order.price}</Text>
         <Text style={summaryItemStyle.data}>Quantity: {order.quantity}</Text>
