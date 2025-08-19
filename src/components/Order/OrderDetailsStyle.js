@@ -1,19 +1,19 @@
 import { StyleSheet } from "react-native";
 import { Button } from "react-native-paper";
-import theme from '../../utils/theme';
+import theme from "../../utils/theme";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
     paddingVertical: 0,
-    width: '100%',
+    width: "100%",
     backgroundColor: theme.colors.background,
   },
   title: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: theme.fonts.size.xl,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 20,
     color: theme.colors.text,
     marginTop: 10,
@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     paddingHorizontal: 10,
     marginBottom: 20,
-    width: '100%',
+    width: "100%",
     ...theme.shadow,
   },
 });
@@ -56,14 +56,14 @@ const customerInfoStyle = StyleSheet.create({
   },
   title: {
     fontSize: theme.fonts.size.lg,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 16,
     color: theme.colors.text,
     marginTop: 0,
   },
   info: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
     marginBottom: 12,
   },
@@ -77,7 +77,7 @@ const customerInfoStyle = StyleSheet.create({
   name: {
     fontSize: theme.fonts.size.md,
     color: theme.colors.text,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   data: {
     color: theme.colors.primary,
@@ -88,8 +88,8 @@ const customerInfoStyle = StyleSheet.create({
     height: 50,
     backgroundColor: theme.colors.background,
     borderRadius: theme.radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
@@ -103,32 +103,32 @@ const summaryItemStyle = StyleSheet.create({
   },
   title: {
     fontSize: theme.fonts.size.lg,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 16,
     color: theme.colors.text,
   },
   continuer: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
-    width: '100%',
+    width: "100%",
     gap: 16,
     marginBottom: 12,
   },
-  image: { 
-    width: 70, 
-    height: 70, 
-    borderRadius: theme.radius.md 
+  image: {
+    width: 70,
+    height: 70,
+    borderRadius: theme.radius.md,
   },
-  name: { 
-    fontWeight: '500', 
-    fontSize: theme.fonts.size.md, 
-    color: theme.colors.text 
+  name: {
+    fontWeight: "500",
+    fontSize: theme.fonts.size.md,
+    color: theme.colors.text,
   },
-  data: { 
-    color: theme.colors.textSecondary, 
-    fontSize: theme.fonts.size.sm 
+  data: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.fonts.size.sm,
   },
 });
 
@@ -176,4 +176,10 @@ const statusStyle = StyleSheet.create({
   },
 });
 
-export { styles, pickerSelectStyles, customerInfoStyle, summaryItemStyle, statusStyle };
+export {
+  styles,
+  pickerSelectStyles,
+  customerInfoStyle,
+  summaryItemStyle,
+  statusStyle,
+};
