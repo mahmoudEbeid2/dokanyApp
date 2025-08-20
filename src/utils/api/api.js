@@ -14,7 +14,7 @@ console.log('🔧 API Configuration:', {
 });
 
 export const authAPI = axios.create({
-  baseURL: `${BASE_URL}/auth/`,
+  baseURL: `${BASE_URL}auth/`,
 });
 
 export const sellerAPI = axios.create({
