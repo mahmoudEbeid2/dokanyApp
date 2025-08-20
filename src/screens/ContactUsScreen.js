@@ -33,7 +33,7 @@ export default function ContactUsScreen({ route, navigation }) {
 
     setLoading(true);
     try {
-      const response = await sellerAPI.post("/api/contact/general", {
+      const response = await sellerAPI.post("/contact/general", {
         name,
         email,
         message,
