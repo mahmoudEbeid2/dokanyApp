@@ -42,7 +42,6 @@ export default function ProductScreen() {
       
       if (append) {
         setAllProducts(prev => [...prev, ...newProducts]);
-        setFilteredProducts(prev => [...prev, ...newProducts]);
       } else {
         setAllProducts(newProducts);
         setFilteredProducts(newProducts);
