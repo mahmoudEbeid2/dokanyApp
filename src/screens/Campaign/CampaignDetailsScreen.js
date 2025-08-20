@@ -26,22 +26,28 @@ export default function CampaignDetailsScreen({ navigation, route }) {
     try {
       setLoading(true);
       
-      // Load campaign details and email stats in parallel
-      const [campaignResponse, statsResponse] = await Promise.all([
-        campaignAPI.getCampaignById(campaignId),
-        campaignAPI.getCampaignEmailStats(campaignId)
-      ]);
+      // Load campaign details only
+      const campaignResponse = await campaignAPI.getCampaignById(campaignId);
       
       // Debug: Check campaign data structure
       console.log('📊 Campaign Response:', campaignResponse);
       console.log('📊 Campaign Object:', campaignResponse.campaign);
-      console.log('🎯 Target Type:', campaignResponse.campaign?.targetType);
       console.log('🎯 All Campaign Fields:', Object.keys(campaignResponse.campaign || {}));
       
       setCampaign(campaignResponse.campaign);
-      setEmailStats(statsResponse.email_statistics);
       
-      console.log('📧 Email stats loaded:', statsResponse.email_statistics);
+      // Mock email stats for now
+      const mockEmailStats = {
+        total_recipients: campaignResponse.campaign?.receiver_count || 0,
+        emails_sent: campaignResponse.campaign?.receiver_count || 0,
+        emails_failed: 0,
+        delivery_rate: '100%',
+        emails_bounced: 0,
+        emails_spam: 0
+      };
+      setEmailStats(mockEmailStats);
+      
+      console.log('📧 Email stats set:', mockEmailStats);
       
     } catch (error) {
       console.error('Error loading campaign details:', error);
@@ -172,44 +178,9 @@ export default function CampaignDetailsScreen({ navigation, route }) {
             <Text style={styles.statValue}>{emailStats.delivery_rate || '0%'}</Text>
           </View>
         </View>
-
-        {(emailStats.emails_bounced > 0 || emailStats.emails_spam > 0) && (
-          <View style={styles.additionalStatsContainer}>
-            <Text style={styles.additionalStatsTitle}>Additional Metrics</Text>
-            <View style={styles.additionalStatsGrid}>
-              {emailStats.emails_bounced > 0 && (
-                <View style={styles.statCard}>
-                  <View style={[styles.statIconContainer, { backgroundColor: `${theme.colors.warning}15` }]}>
-                    <Ionicons name="arrow-undo" size={20} color={theme.colors.warning} />
-                  </View>
-                  <Text style={styles.statLabel}>Bounced</Text>
-                  <Text style={[styles.statValue, { color: theme.colors.warning }]}>
-                    {emailStats.emails_bounced}
-                  </Text>
-                </View>
-              )}
-              
-              {emailStats.emails_spam > 0 && (
-                <View style={styles.statCard}>
-                  <View style={[styles.statIconContainer, { backgroundColor: `${theme.colors.error}15` }]}>
-                    <Ionicons name="shield-checkmark" size={20} color={theme.colors.error} />
-                  </View>
-                  <Text style={styles.statLabel}>Spam Folder</Text>
-                  <Text style={[styles.statValue, { color: theme.colors.error }]}>
-                    {emailStats.emails_spam}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-
-                
       </View>
     );
   };
-
-
 
   if (loading) {
     return (
@@ -270,20 +241,6 @@ export default function CampaignDetailsScreen({ navigation, route }) {
            <Text style={styles.sectionTitle}>Campaign Content</Text>
            <Text style={styles.campaignContent}>{campaign.content}</Text>
          </View>
-
-                   {/* Target Type */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Target Type</Text>
-            <Text style={styles.targetType}>
-              {campaign.targetType === 'ALL_CUSTOMERS' && 'All Customers'}
-              {campaign.targetType === 'PRODUCT_CUSTOMERS' && 'Product Customers'}
-              {campaign.targetType === 'CATEGORY_CUSTOMERS' && 'Category Customers'}
-              {campaign.targetType === 'LOCATION_CUSTOMERS' && 'Location Customers'}
-              {campaign.targetType === 'HIGH_VALUE_CUSTOMERS' && 'High Value Customers'}
-              {campaign.targetType === 'RECENT_CUSTOMERS' && 'Recent Customers'}
-              {(!campaign.targetType || campaign.targetType === '') && 'All Customers'}
-            </Text>
-          </View>
 
          {/* Action Buttons */}
          {campaign.status === 'ACTIVE' && (
@@ -375,11 +332,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     lineHeight: 22,
   },
-  
-  targetType: {
-    fontSize: theme.fonts.size.md,
-    color: theme.colors.text,
-  },
   actionsContainer: {
     marginBottom: 40,
   },
@@ -402,39 +354,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 12,
-  },
-  insightsContainer: {
-    marginTop: 12,
-    backgroundColor: theme.colors.card,
-    borderRadius: 8,
-    padding: 16,
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  insightsTitle: {
-    fontSize: theme.fonts.size.md,
-    fontWeight: '600',
-    color: theme.colors.primary,
-    marginBottom: 12,
-  },
-  insightItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingVertical: 4,
-  },
-  insightLabel: {
-    fontSize: theme.fonts.size.sm,
-    color: theme.colors.textSecondary,
-    fontWeight: '500',
-  },
-  insightValue: {
-    fontSize: theme.fonts.size.sm,
-    fontWeight: '600',
-    color: theme.colors.text,
   },
   emailStatsSection: {
     backgroundColor: theme.colors.card,
@@ -486,296 +405,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.colors.text,
   },
-  additionalStatsContainer: {
-    marginTop: 16,
-    backgroundColor: theme.colors.card,
-    borderRadius: 8,
-    padding: 16,
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  additionalStatsTitle: {
-    fontSize: theme.fonts.size.md,
-    fontWeight: '600',
-    color: theme.colors.primary,
-    marginBottom: 12,
-  },
-  additionalStatsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-     insightsHeader: {
-     flexDirection: 'row',
-     alignItems: 'center',
-     marginBottom: 16,
-   },
-   insightsTitle: {
-     fontSize: theme.fonts.size.lg,
-     fontWeight: '600',
-     color: theme.colors.text,
-     marginLeft: 8,
-   },
-   insightsGrid: {
-     flexDirection: 'row',
-     flexWrap: 'wrap',
-     justifyContent: 'space-between',
-     marginBottom: 12,
-   },
-   insightCard: {
-     width: '48%',
-     alignItems: 'center',
-     paddingVertical: 16,
-     marginBottom: 12,
-     backgroundColor: theme.colors.card,
-     borderRadius: 8,
-     shadowColor: theme.colors.shadow,
-     shadowOffset: { width: 0, height: 1 },
-     shadowOpacity: 0.1,
-     shadowRadius: 2,
-     elevation: 1,
-   },
-   insightLabel: {
-     fontSize: theme.fonts.size.sm,
-     color: theme.colors.textSecondary,
-     marginTop: 4,
-     marginBottom: 2,
-     textAlign: 'center',
-   },
-   insightValue: {
-     fontSize: theme.fonts.size.lg,
-     fontWeight: '600',
-     color: theme.colors.text,
-     textAlign: 'center',
-   },
-   insightIconContainer: {
-     width: 40,
-     height: 40,
-     borderRadius: 20,
-     justifyContent: 'center',
-     alignItems: 'center',
-     marginBottom: 12,
-   },
-   insightSubtitle: {
-     fontSize: theme.fonts.size.xs,
-     color: theme.colors.textSecondary,
-     marginTop: 4,
-     textAlign: 'center',
-   },
-
-  section: {
-
-    backgroundColor: theme.colors.card,
-
-    borderRadius: theme.radius.md,
-
-    padding: 20,
-
-    marginBottom: 16,
-
-    ...theme.shadow,
-
-  },
-
-  sectionTitle: {
-
-    fontSize: theme.fonts.size.md,
-
-    fontWeight: '600',
-
-    color: theme.colors.primary,
-
-    marginBottom: 12,
-
-  },
-
-  campaignTitle: {
-
-    fontSize: theme.fonts.size.lg,
-
-    fontWeight: '600',
-
-    color: theme.colors.text,
-
-    lineHeight: 24,
-
-  },
-
-  campaignContent: {
-
-    fontSize: theme.fonts.size.md,
-
-    color: theme.colors.text,
-
-    lineHeight: 22,
-
-  },
-
-  statsContainer: {
-
-    flexDirection: 'row',
-
-    flexWrap: 'wrap',
-
-    justifyContent: 'space-between',
-
-  },
-
-  statItem: {
-
-    width: '48%',
-
-    alignItems: 'center',
-
-    paddingVertical: 12,
-
-    marginBottom: 12,
-
-    backgroundColor: theme.colors.card,
-    borderRadius: 8,
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-
-  statLabel: {
-
-    fontSize: theme.fonts.size.sm,
-
-    color: theme.colors.textSecondary,
-
-    marginTop: 4,
-
-    marginBottom: 2,
-
-  },
-
-  statValue: {
-
-    fontSize: theme.fonts.size.lg,
-
-    fontWeight: '600',
-
-    color: theme.colors.text,
-
-  },
-
-  targetType: {
-
-    fontSize: theme.fonts.size.md,
-
-    color: theme.colors.text,
-
-  },
-
-  actionsContainer: {
-
-    marginBottom: 40,
-
-  },
-
-  cancelButton: {
-
-    backgroundColor: theme.colors.error,
-
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    justifyContent: 'center',
-
-    paddingVertical: 16,
-
-    borderRadius: theme.radius.sm,
-
-  },
-
-  cancelButtonText: {
-
-    fontSize: theme.fonts.size.md,
-
-    fontWeight: '600',
-
-    color: 'white',
-
-    marginLeft: 8,
-
-  },
-
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  insightsContainer: {
-    marginTop: 12,
-    backgroundColor: theme.colors.card,
-    borderRadius: 8,
-    padding: 16,
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  insightsTitle: {
-    fontSize: theme.fonts.size.md,
-    fontWeight: '600',
-    color: theme.colors.primary,
-    marginBottom: 12,
-  },
-  insightItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingVertical: 4,
-  },
-  insightLabel: {
-    fontSize: theme.fonts.size.sm,
-    color: theme.colors.textSecondary,
-    fontWeight: '500',
-  },
-  insightValue: {
-    fontSize: theme.fonts.size.sm,
-    fontWeight: '600',
-    color: theme.colors.text,
-  },
-  metricsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  metricItem: {
-    width: '48%',
-    alignItems: 'center',
-    paddingVertical: 12,
-    marginBottom: 12,
-    backgroundColor: theme.colors.card,
-    borderRadius: 8,
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  metricLabel: {
-    fontSize: theme.fonts.size.sm,
-    color: theme.colors.textSecondary,
-    marginTop: 4,
-    marginBottom: 2,
-    textAlign: 'center',
-  },
-  metricValue: {
-    fontSize: theme.fonts.size.lg,
-    fontWeight: '600',
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
 });
+
+
+
 

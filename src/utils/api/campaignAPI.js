@@ -104,36 +104,5 @@ export const campaignAPI = {
     }
   },
 
-  // Get campaign email statistics
-  getCampaignEmailStats: async (campaignId) => {
-    try {
-      const response = await sellerAPI.get(`seller-campaigns/${campaignId}/email-stats`);
-      return response.data;
-    } catch (error) {
-      console.error('❌ API: Error getting campaign email stats:', error);
-      throw error;
-    }
-  },
-
-  // Get campaign status information
-  getCampaignStatusInfo: async (campaignId) => {
-    try {
-      const response = await sellerAPI.get(`seller-campaigns/${campaignId}/status`);
-      return response.data;
-    } catch (error) {
-      console.error('❌ API: Error getting campaign status info:', error);
-      throw error;
-    }
-  },
-
-  // Mark campaign as completed
-  markCampaignAsCompleted: async (campaignId) => {
-    try {
-      const response = await sellerAPI.patch(`seller-campaigns/${campaignId}/complete`);
-      return response.data;
-    } catch (error) {
-      console.error('❌ API: Error marking campaign as completed:', error);
-      throw error;
-    }
-  }
+  // Note: Additional API functions can be added here when backend endpoints are available
 };

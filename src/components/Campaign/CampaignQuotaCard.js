@@ -3,15 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import theme from '../../utils/theme';
 
-function CampaignQuotaCard({ quotaData, onCreateCampaign }) {
+function CampaignQuotaCard({ quotaData }) {
   const {
     dailyCampaignsUsed,
     dailyCampaignsRemaining,
     dailyCampaignsLimit,
     nextCampaignCost,
     availableBalance,
-    canCreateFreeCampaign,
-    canCreatePaidCampaign,
   } = quotaData;
 
   // Debug logging
@@ -23,7 +21,6 @@ function CampaignQuotaCard({ quotaData, onCreateCampaign }) {
     availableBalance
   });
 
-  const canCreateCampaign = canCreateFreeCampaign || canCreatePaidCampaign;
   const progressPercentage = (dailyCampaignsUsed / dailyCampaignsLimit) * 100;
 
   return (
@@ -77,18 +74,9 @@ function CampaignQuotaCard({ quotaData, onCreateCampaign }) {
         </View>
       </View>
 
-      {/* Status Messages */}
-      {!canCreateCampaign && (
-        <View style={styles.statusContainer}>
-          <Ionicons name="information-circle" size={16} color={theme.colors.warning} />
-          <Text style={styles.statusText}>
-            {availableBalance < nextCampaignCost 
-              ? 'Insufficient balance for paid campaign'
-              : 'Daily quota exhausted - resets at midnight'
-            }
-          </Text>
-        </View>
-      )}
+
+
+      {/* Create New Campaign Button - Removed */}
     </View>
   );
 }
@@ -158,19 +146,8 @@ const styles = StyleSheet.create({
     fontSize: theme.fonts.size.lg,
     fontWeight: '600',
   },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 8,
-  },
-  statusText: {
-    fontSize: theme.fonts.size.sm,
-    color: theme.colors.warning,
-    marginLeft: 8,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
+
+
 });
 
 export default CampaignQuotaCard;

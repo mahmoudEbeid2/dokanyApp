@@ -41,7 +41,7 @@ export default function StatsOverview() {
     <View style={styles.container}>
       <StatCard
         title="Total Sales"
-        value={`$${stats.totalEarnings}`}
+        value={`$${Math.round(stats.totalEarnings)}`}
         icon={<MaterialIcons name="attach-money" size={32} color={theme.colors.primary} />}
       />
       <StatCard

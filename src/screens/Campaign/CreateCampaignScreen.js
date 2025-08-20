@@ -164,10 +164,24 @@ export default function CreateCampaignScreen({ navigation, route }) {
         content: formData.content.trim(),
         targetType: formData.targetType,
         targetData: formData.targetData || {},
-        campaignCost: quotaData?.nextCampaignCost || 0,
       };
 
+      console.log('📱 Campaign data structure:', {
+        title: campaignData.title,
+        content: campaignData.content,
+        targetType: campaignData.targetType,
+        targetData: campaignData.targetData,
+        hasProductIds: !!campaignData.targetData.productIds?.length,
+        hasCategoryIds: !!campaignData.targetData.categoryIds?.length,
+        hasLocations: !!campaignData.targetData.locations?.length
+      });
+
       console.log('📱 Sending campaign data:', campaignData);
+      console.log('📱 Campaign cost info:', {
+        nextCampaignCost: quotaData?.nextCampaignCost,
+        availableBalance: quotaData?.availableBalance,
+        isFree: quotaData?.nextCampaignCost === 0
+      });
 
       const response = await campaignAPI.createCampaign(campaignData);
 
@@ -448,6 +462,9 @@ export default function CreateCampaignScreen({ navigation, route }) {
           <View style={styles.costInfo}>
             <Text style={styles.costText}>
               Cost of this campaign: {quotaData.nextCampaignCost === 0 ? 'Free' : `$${quotaData.nextCampaignCost}`}
+            </Text>
+            <Text style={styles.costText}>
+              Available Balance: ${quotaData.availableBalance?.toFixed(2) || '0.00'}
             </Text>
           </View>
         )}

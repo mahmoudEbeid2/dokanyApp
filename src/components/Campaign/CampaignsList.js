@@ -79,6 +79,16 @@ function CampaignItem({ campaign, onPress }) {
         {campaign.content}
       </Text>
 
+      {/* Target Type Badge */}
+      {campaign.targetType && (
+        <View style={styles.targetTypeContainer}>
+          <Ionicons name="target" size={14} color={theme.colors.accent} />
+          <Text style={styles.targetTypeText}>
+            {campaign.targetType.replace('_', ' ')}
+          </Text>
+        </View>
+      )}
+
       <View style={styles.campaignFooter}>
         <View style={styles.campaignInfo}>
           <View style={styles.infoItem}>
@@ -198,6 +208,23 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     marginBottom: 14,
     lineHeight: 20,
+  },
+  targetTypeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: `${theme.colors.accent}15`,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  targetTypeText: {
+    fontSize: theme.fonts.size.xs,
+    color: theme.colors.accent,
+    fontWeight: '500',
+    marginLeft: 4,
+    textTransform: 'capitalize',
   },
   campaignFooter: {
     flexDirection: 'row',

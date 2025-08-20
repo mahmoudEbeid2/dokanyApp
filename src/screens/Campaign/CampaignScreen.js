@@ -30,6 +30,7 @@ export default function CampaignScreen({ navigation }) {
       setLoading(true);
       
       // Load quota, campaigns, and stats in parallel
+      // Note: getQuota() now uses API domain from .env file
       const [quotaResponse, campaignsResponse, statsResponse] = await Promise.all([
         campaignAPI.getQuota(),
         campaignAPI.getCampaigns(1, 10),
@@ -38,35 +39,73 @@ export default function CampaignScreen({ navigation }) {
 
       console.log('Quota Response:', quotaResponse);
       console.log('Campaigns Response:', campaignsResponse);
-      console.log('🎯 First Campaign Target Type:', campaignsResponse.campaigns?.[0]?.targetType);
+      // console.log('🎯 First Campaign Target Type:', campaignsResponse.campaigns?.[0]?.targetType);
       console.log('🎯 All Campaign Fields:', campaignsResponse.campaigns?.[0] ? Object.keys(campaignsResponse.campaigns[0]) : 'No campaigns');
       console.log('Stats Response:', statsResponse);
 
-      // Process quota data with fallbacks
+      // Process quota data with fallbacks - handle nested API structure
       const quota = quotaResponse.quota || {};
-      const processedQuota = {
-        dailyCampaignsUsed: quota.dailyCampaignsUsed || 0,
-        dailyCampaignsRemaining: quota.dailyCampaignsRemaining || 3,
-        dailyCampaignsLimit: quota.dailyCampaignsLimit || 3,
-        nextCampaignCost: quota.nextCampaignCost || 0,
-        availableBalance: quota.availableBalance || 100.0,
-        canCreateFreeCampaign: quota.canCreateFreeCampaign !== false,
-        canCreatePaidCampaign: quota.canCreatePaidCampaign || false,
-      };
-
-      // If API returns 0 for limit, set a default limit
-      if (processedQuota.dailyCampaignsLimit === 0) {
-        processedQuota.dailyCampaignsLimit = 3;
+      
+      // Check if it's nested structure (production API) or flat structure (local API)
+      const isNestedStructure = quota.daily && quota.balance;
+      
+      let processedQuota;
+      
+      if (isNestedStructure) {
+        // Production API format (nested structure)
+        const dailyCampaignsUsed = 3 - (quota.daily?.freeCampaignsRemaining || 0); // Calculate used: 3 - remaining
+        
+        processedQuota = {
+          dailyCampaignsUsed: dailyCampaignsUsed,
+          dailyCampaignsRemaining: quota.daily?.freeCampaignsRemaining || 3,
+          dailyCampaignsLimit: quota.daily?.freeCampaigns || 3,
+          nextCampaignCost: quota.daily?.nextCampaignCost || 1,
+          availableBalance: quota.balance?.availableBalance || 0,
+          canCreateFreeCampaign: (quota.daily?.freeCampaignsRemaining || 0) > 0,
+          canCreatePaidCampaign: true,
+        };
+        
+        console.log('🔍 Production API (Nested):', {
+          freeCampaignsRemaining: quota.daily?.freeCampaignsRemaining,
+          calculatedUsed: dailyCampaignsUsed,
+          nextCampaignCost: quota.daily?.nextCampaignCost
+        });
+      } else {
+        // Local API format (flat structure)
+        processedQuota = {
+          dailyCampaignsUsed: quota.dailyFreeCampaignsUsed || 0,
+          dailyCampaignsRemaining: quota.dailyFreeCampaignsRemaining || 3,
+          dailyCampaignsLimit: quota.dailyFreeCampaignsLimit || 3,
+          nextCampaignCost: quota.nextCampaignCost || 0,
+          availableBalance: quota.availableBalance || 0,
+          canCreateFreeCampaign: quota.canCreateFreeCampaign !== false,
+          canCreatePaidCampaign: quota.canCreatePaidCampaign !== false,
+        };
+        
+        console.log('🔍 Local API (Flat):', processedQuota);
       }
 
-      // Simple logic: if less than 3, show actual number, if 3 or more, show 3 of 3
-      if (campaignsResponse.campaigns?.length > 0) {
-        if (campaignsResponse.campaigns.length < 3) {
-          processedQuota.dailyCampaignsUsed = campaignsResponse.campaigns.length;
-        } else {
-          processedQuota.dailyCampaignsUsed = 3;
-        }
+      // Override API values to enforce 3 campaigns limit
+      if (quota.dailyCampaignsLimit !== 3) {
+        console.log('⚠️ API returned incorrect limit, overriding to 3:', quota.dailyCampaignsLimit);
       }
+      
+      // Log balance information
+      console.log('💰 Balance Info:', {
+        apiBalance: quota.availableBalance,
+        finalBalance: processedQuota.availableBalance,
+        usingFallback: !quota.availableBalance
+      });
+
+      // Use API quota data directly - no need to recalculate
+      console.log('🔍 Using API quota data:', {
+        dailyFreeCampaignsUsed: quota.dailyFreeCampaignsUsed,
+        dailyFreeCampaignsRemaining: quota.dailyFreeCampaignsRemaining,
+        dailyFreeCampaignsLimit: quota.dailyFreeCampaignsLimit,
+        nextCampaignCost: quota.nextCampaignCost,
+        canCreateFree: quota.canCreateFreeCampaign,
+        canCreatePaid: quota.canCreatePaidCampaign
+      });
 
       console.log('🔍 Processed Quota Data:', processedQuota);
       
@@ -112,12 +151,12 @@ export default function CampaignScreen({ navigation }) {
       // Set fallback data for testing
       setQuotaData({
         dailyCampaignsUsed: 0,
-        dailyCampaignsRemaining: 5,
-        dailyCampaignsLimit: 5,
-        nextCampaignCost: 0,
-        availableBalance: 100.0,
+        dailyCampaignsRemaining: 3, // Only 3 free campaigns per day
+        dailyCampaignsLimit: 3,     // Limit is 3, not 5
+        nextCampaignCost: 0,        // First 3 are free
+        availableBalance: 0,        // Don't assume balance, let user check
         canCreateFreeCampaign: true,
-        canCreatePaidCampaign: false,
+        canCreatePaidCampaign: true, // Can create paid campaigns after 3
       });
       
       setCampaigns([]);
