@@ -57,7 +57,7 @@ function UpdateCoupon({ coupon, onUpdateCoupon, onLoading }) {
       const expireDate = new Date();
       expireDate.setDate(today.getDate() + (isNaN(days) ? 0 : days));
 
-      const response = await fetch(`${API}/coupon/${coupon.id}`, {
+      const response = await fetch(`${API}/api/coupon/${coupon.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -75,11 +75,13 @@ function UpdateCoupon({ coupon, onUpdateCoupon, onLoading }) {
 
       const data = await response.json();
 
+
       if (response.ok) {
         Alert.alert("Success", " ✅ Coupon updated successfully!");
         onUpdateCoupon(data);
       } else {
         console.error("❌ Server error:", data);
+        console.log(response)
         Alert.alert(
           "Error",
           data?.message || "Something went wrong while updating the coupon."
