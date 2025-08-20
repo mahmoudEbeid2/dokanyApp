@@ -250,7 +250,7 @@ export default function EditSellerProfile() {
       }
 
       const res = await fetch(
-        "https://dokany-api-production.up.railway.app/api/seller/update",
+        `${API}/api/seller/update`,
         {
           method: "PUT",
           headers: {
