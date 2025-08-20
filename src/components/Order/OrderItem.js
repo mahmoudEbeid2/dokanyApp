@@ -2,8 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
-import theme from '../../utils/theme';
-
+import theme from "../../utils/theme";
+import { API } from "@env";
 function OrderItem({ order }) {
   const navigation = useNavigation();
 
@@ -31,7 +31,7 @@ function OrderItem({ order }) {
   const getCustomerImage = (order) => {
     if (order.customer) {
       let imageUrl = null;
-      
+
       if (order.customer.profile_imge) {
         imageUrl = order.customer.profile_imge;
       } else if (order.customer.profile_image) {
@@ -41,12 +41,12 @@ function OrderItem({ order }) {
       } else if (order.customer.avatar) {
         imageUrl = order.customer.avatar;
       }
-      
+
       if (imageUrl) {
-        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
           return imageUrl;
-        } else if (imageUrl.startsWith('/')) {
-          return `https://dokany-api-production.up.railway.app${imageUrl}`;
+        } else if (imageUrl.startsWith("/")) {
+          return `${API}${imageUrl}`;
         }
       }
     }
@@ -63,13 +63,11 @@ function OrderItem({ order }) {
                 uri: getCustomerImage(order),
               }}
               style={styles.image}
-              defaultSource={require('../../../assets/avtar.jpg')}
+              defaultSource={require("../../../assets/avtar.jpg")}
             />
           </View>
           <View>
-            <Text style={styles.name}>
-              {getCustomerName(order)}
-            </Text>
+            <Text style={styles.name}>{getCustomerName(order)}</Text>
             <Text style={styles.price}>{"$" + order.total_price} </Text>
           </View>
         </View>
@@ -81,12 +79,12 @@ function OrderItem({ order }) {
 
 const styles = StyleSheet.create({
   continuer: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 8,
-    width: '100%',
+    width: "100%",
   },
   image: {
     width: 56,
@@ -96,12 +94,12 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   contentContinuer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
   },
   name: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: theme.fonts.size.md,
     color: theme.colors.text,
     fontFamily: theme.fonts.bold,
