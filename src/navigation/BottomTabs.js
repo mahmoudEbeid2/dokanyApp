@@ -5,10 +5,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, StatusBar } from "react-native";
 import theme from "../utils/theme";
 
-import ProductsAndCategories from "../screens/ProductsAndCategoriesScreen";
+import ProductManager from "../screens/ProductManager";
 import OrdersScreen from "../screens/Orders/OrderScreen";
 import CustomersScreen from "../screens/Customers/CustomersListScreen";
-import CouponsScreen from "../screens/Coupon/CouponScreen";
+import CampaignScreen from "../screens/Campaign/CampaignScreen";
 import HomeScreen from "../screens/HomeScreen";
 
 const Tab = createBottomTabNavigator();
@@ -36,8 +36,8 @@ export default function BottomTabs() {
             case "Customers":
               iconName = "people";
               break;
-            case "Coupons":
-              iconName = "pricetags-outline";
+            case "Campaigns":
+              iconName = "megaphone-outline";
               break;
             default:
               iconName = "ellipse";
@@ -82,7 +82,7 @@ export default function BottomTabs() {
       />
       <Tab.Screen 
         name="Products" 
-        component={ProductsAndCategories}
+        component={ProductManager}
         options={{
           tabBarVisible: true,
           tabBarStyle: { display: 'flex' },
@@ -97,8 +97,8 @@ export default function BottomTabs() {
         }}
       />
       <Tab.Screen 
-        name="Coupons" 
-        component={CouponsScreen}
+        name="Campaigns" 
+        component={CampaignScreen}
         options={{
           tabBarVisible: true,
           tabBarStyle: { display: 'flex' },

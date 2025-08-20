@@ -120,11 +120,6 @@ function CouponScreen() {
     <>
       <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <View style={styles.placeholder} />
-          <Text style={styles.title}>Coupon</Text>
-          <View style={styles.placeholder} />
-        </View>
         <ScrollView 
           contentContainerStyle={styles.container}
           showsVerticalScrollIndicator={false}
@@ -170,15 +165,6 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
     backgroundColor: theme.colors.background,
     minHeight: Dimensions.get('window').height - 100,
-  },
-  header: {
-    ...theme.header.container,
-  },
-  title: {
-    ...theme.header.title,
-  },
-  placeholder: {
-    ...theme.header.placeholder,
   },
 });
 

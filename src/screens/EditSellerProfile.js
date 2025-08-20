@@ -12,15 +12,17 @@ import {
   Platform,
   StatusBar,
   KeyboardAvoidingView,
+  Modal,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API } from "@env";
-import { AntDesign } from "@expo/vector-icons";
+import { API, DOMAIN } from "@env";
+import { AntDesign, Ionicons, FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import theme from "../utils/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { WebView } from "react-native-webview";
 
 export default function EditSellerProfile() {
   const [token, setToken] = useState(null);
@@ -29,6 +31,8 @@ export default function EditSellerProfile() {
   const [screenHeight, setScreenHeight] = useState(
     Dimensions.get("window").height
   );
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener("change", ({ window }) => {
@@ -270,6 +274,18 @@ export default function EditSellerProfile() {
     }
   };
 
+  const handlePreviewTheme = (subdomain) => {
+    if (!subdomain) {
+      Alert.alert("No Subdomain", "Please enter a subdomain first to preview the theme.");
+      return;
+    }
+    
+    const domain = DOMAIN || "dokaney.store";
+    const url = `https://${subdomain}.${domain}`;
+    setPreviewUrl(url);
+    setPreviewModalVisible(true);
+  };
+
   return (
     <LinearGradient
       colors={[theme.colors.background, "#e8eaf6"]}
@@ -401,7 +417,7 @@ export default function EditSellerProfile() {
             />
           </View>
           <View style={styles.socialInputContainer}>
-            <AntDesign
+            <FontAwesome
               name="pinterest"
               size={20}
               color={theme.colors.textSecondary}
@@ -421,23 +437,33 @@ export default function EditSellerProfile() {
           <Text style={styles.label}>Select Theme</Text>
           <View style={styles.themeList}>
             {themes.map((themeItem) => (
-              <TouchableOpacity
-                key={themeItem.id}
-                style={[
-                  styles.themeCard,
-                  form.theme_id === themeItem.id && styles.selectedThemeCard,
-                ]}
-                onPress={() => handleChange("theme_id", themeItem.id)}
-              >
-                <Image
-                  source={{ uri: themeItem.preview_image }}
-                  style={styles.themeImage}
-                />
-                <Text style={styles.themeName}>{themeItem.name}</Text>
-                {form.theme_id === themeItem.id && (
-                  <Text style={styles.selectedText}>Selected</Text>
-                )}
-              </TouchableOpacity>
+              <View key={themeItem.id} style={styles.themeCardWrapper}>
+                <TouchableOpacity
+                  style={[
+                    styles.themeCard,
+                    form.theme_id === themeItem.id && styles.selectedThemeCard,
+                  ]}
+                  onPress={() => handleChange("theme_id", themeItem.id)}
+                >
+                  <Image
+                    source={{ uri: themeItem.preview_image }}
+                    style={styles.themeImage}
+                  />
+                  <Text style={styles.themeName}>{themeItem.name}</Text>
+                  {form.theme_id === themeItem.id && (
+                    <Text style={styles.selectedText}>Selected</Text>
+                  )}
+                </TouchableOpacity>
+                
+                {/* Preview Button */}
+                <TouchableOpacity
+                  style={styles.previewButton}
+                  onPress={() => handlePreviewTheme(form.subdomain)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.previewButtonText}>Preview</Text>
+                </TouchableOpacity>
+              </View>
             ))}
           </View>
 
@@ -450,6 +476,34 @@ export default function EditSellerProfile() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Preview Modal */}
+      <Modal
+        visible={previewModalVisible}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setPreviewModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeaderContainer}>
+            <Text style={styles.modalHeader}>Theme Preview</Text>
+            <TouchableOpacity
+              style={styles.closeButtonSmall}
+              onPress={() => setPreviewModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <WebView
+            source={{ uri: previewUrl }}
+            style={styles.webview}
+            startInLoadingState={true}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+          />
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -512,6 +566,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 12,
     marginBottom: 20,
+  },
+  themeCardWrapper: {
+    alignItems: "center",
+    marginBottom: 8,
   },
   themeCard: {
     width: 130,
@@ -707,5 +765,59 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: theme.fonts.size.md,
     color: theme.colors.text,
+  },
+  previewButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: theme.radius.sm,
+    marginTop: 8,
+    shadowColor: theme.colors.shadow || '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  previewButtonText: {
+    color: theme.colors.card,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  modalHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: theme.colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  modalHeader: {
+    fontSize: theme.fonts.size.lg,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    flex: 1,
+  },
+  closeButtonSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: theme.colors.card,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  webview: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
 });

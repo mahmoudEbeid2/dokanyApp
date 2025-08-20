@@ -41,7 +41,7 @@ const CustomersListScreen = ({ navigation }) => {
       const fetchCustomers = async () => {
         try {
           setLoading(true);
-          const response = await sellerAPI.get("/api/seller/customers");
+          const response = await sellerAPI.get("seller/customers");
           const fetchedCustomers = response.data || [];
           setCustomers(fetchedCustomers);
           // Set filtered customers here as well to reflect the latest fetch

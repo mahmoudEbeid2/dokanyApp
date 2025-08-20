@@ -57,7 +57,7 @@ function UpdateCoupon({ coupon, onUpdateCoupon, onLoading }) {
       const expireDate = new Date();
       expireDate.setDate(today.getDate() + (isNaN(days) ? 0 : days));
 
-      const response = await fetch(`${API}/api/coupon/${coupon.id}`, {
+      const response = await fetch(`${API}/coupon/${coupon.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

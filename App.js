@@ -23,6 +23,8 @@ import CustomerDetailsScreen from "./src/screens/Customers/CustomerDetailsScreen
 import EditCustomerScreen from "./src/screens/Customers/EditCustomerScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import OrderDetails from "./src/screens/Orders/OrderDetails";
+import CreateCampaignScreen from "./src/screens/Campaign/CreateCampaignScreen";
+import CampaignDetailsScreen from "./src/screens/Campaign/CampaignDetailsScreen";
 
 import BottomTabs from "./src/navigation/BottomTabs";
 import ContactUsScreen from "./src/screens/ContactUsScreen";
@@ -65,6 +67,8 @@ export default function App() {
           <Stack.Screen name="EditCustomer" component={EditCustomerScreen} />
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="OrderDetails" component={OrderDetails} />
+          <Stack.Screen name="CreateCampaign" component={CreateCampaignScreen} />
+          <Stack.Screen name="CampaignDetails" component={CampaignDetailsScreen} />
           <Stack.Screen
             name="ContactUs"
             component={ContactUsScreen}

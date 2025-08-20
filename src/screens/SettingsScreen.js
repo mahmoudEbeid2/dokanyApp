@@ -62,7 +62,7 @@ export default function SettingsScreen({ navigation }) {
   const fetchSeller = async () => {
     try {
       setLoading(true);
-      const res = await sellerAPI.get("api/seller/id");
+      const res = await sellerAPI.get("seller/id");
       setSeller(res.data);
     } catch (err) {
       console.error(err);

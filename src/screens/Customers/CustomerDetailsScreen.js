@@ -52,7 +52,7 @@ const CustomerDetailsScreen = ({ route, navigation }) => {
           style: "destructive",
           onPress: async () => {
             try {
-              await sellerAPI.delete(`/api/seller/customers/${customer.id}`);
+              await sellerAPI.delete(`seller/customers/${customer.id}`);
               Alert.alert("Success", "Customer deleted successfully.");
               navigation.navigate('MainTabs', { screen: 'Customers' });
             } catch (error) {

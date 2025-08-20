@@ -399,6 +399,13 @@ export default function RegisterScreen({ navigation }) {
                     style={styles.input}
                     placeholderTextColor={theme.colors.textSecondary}
                   />
+                  {name === 'subdomain' && (
+                    <View style={styles.domainSuffix}>
+                      <Text style={styles.domainSuffixText}>
+                        .dokaney.store
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 {errors[name] && <Text style={styles.errorText}>{errors[name]}</Text>}
               </View>
@@ -615,6 +622,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 4,
+    position: 'relative',
   },
   icon: {
     marginRight: 5,
@@ -682,6 +690,21 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: 12,
+  },
+  domainSuffix: {
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    transform: [{ translateY: -10 }],
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: theme.radius.sm,
+  },
+  domainSuffixText: {
+    color: 'white',
+    fontSize: theme.fonts.size.sm,
+    fontWeight: '600',
   },
   logoCircleModern: {
     backgroundColor: theme.colors.card,

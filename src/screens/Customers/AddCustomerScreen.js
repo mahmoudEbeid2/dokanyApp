@@ -93,7 +93,7 @@ const AddCustomerScreen = ({ navigation }) => {
     }
 
     try {
-      await sellerAPI.post("/api/seller/customers", formData, {
+      await sellerAPI.post("seller/customers", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       Alert.alert("Success", "Customer added successfully!");

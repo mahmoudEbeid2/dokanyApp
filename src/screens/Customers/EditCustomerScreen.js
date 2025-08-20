@@ -98,7 +98,7 @@ const EditCustomerScreen = ({ route, navigation }) => {
     }
 
     try {
-      await sellerAPI.put(`/api/seller/customers/${customer.id}`, formData, {
+      await sellerAPI.put(`seller/customers/${customer.id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       

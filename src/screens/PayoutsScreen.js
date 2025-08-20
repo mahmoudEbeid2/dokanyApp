@@ -45,18 +45,17 @@ export default function PayoutsScreen({ route, navigation }) {
     const fetchPayouts = async () => {
         setLoading(true);
         try {
-            const res = await sellerAPI.get('api/payouts/seller/');
+            const res = await sellerAPI.get('payouts/seller/');
             setPayouts(res.data);
-        } catch (err) {
-            console.error(err);
-            Alert.alert('Error', 'Failed to fetch payouts');
+        } catch (error) {
+            console.error('Error fetching payouts:', error);
         }
         setLoading(false);
     };
 
     const fetchEarningsSummary = async () => {
         try {
-            const res = await sellerAPI.get('api/seller/earnings-summary');
+            const res = await sellerAPI.get('seller/earnings-summary');
             setSummary(res.data);
         } catch (err) {
             console.error(err);
@@ -77,7 +76,7 @@ export default function PayoutsScreen({ route, navigation }) {
 
         setSubmitting(true);
         try {
-            await sellerAPI.post('api/payouts', {
+            const res = await sellerAPI.post('payouts', {
                 amount: parseFloat(amount),
                 payout_method: payoutMethod,
                 seller_id: sellerId,
